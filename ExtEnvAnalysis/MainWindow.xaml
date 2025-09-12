@@ -1,0 +1,911 @@
+﻿<Window x:Class="ExtEnvAnalysis.MainWindow"
+        x:Name="RootWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="clr-namespace:ExtEnvAnalysis.Core"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:ExtEnvAnalysis"
+        xmlns:conv="clr-namespace:ExtEnvAnalysis.Converters"
+        xmlns:ctrls="clr-namespace:ExtEnvAnalysis.Controls"
+        Title="Анализ внешнего рынка" Width="1920" Height="1080"
+        WindowStartupLocation="CenterScreen"
+        FontSize="28">
+    <Window.Resources>
+        <!-- СНАЧАЛА прокси и конвертер -->
+        <local:BindingProxy x:Key="ProfileProxy" Data="{Binding App.Profile}" />
+        <conv:WatermarkVisibilityConverter x:Key="WatermarkVisibilityConverter" />
+        <conv:SegmentSelectedConverter x:Key="SegmentSelectedConverter" />
+        <conv:SumOkToBrushConverter x:Key="SumOkToBrushConverter" />
+
+        <Style x:Key="RatingCell" TargetType="TextBox">
+            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+            <!-- ДОБАВЬ ЭТО -->
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#F2F2F2"/>
+                    <Setter Property="Foreground" Value="#7A7A7A"/>
+                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                    <Setter Property="Text" Value=""/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Отключаем элементы для бакалавра -->
+        <Style x:Key="EnabledForMastersOnly" TargetType="{x:Type FrameworkElement}">
+            <Setter Property="IsEnabled" Value="True"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding App.Profile.Difficulty}"
+                     Value="{x:Static core:Difficulty.Bachelor}">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Скрыть целиком элементы для бакалавра -->
+        <Style x:Key="VisibleForMastersOnly" TargetType="{x:Type FrameworkElement}">
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding App.Profile.Difficulty}"
+                     Value="{x:Static core:Difficulty.Bachelor}">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Сделать поля ТОЛЬКО чтение для бакалавра -->
+        <Style x:Key="ReadOnlyIfBachelor" TargetType="{x:Type TextBox}">
+            <Setter Property="IsReadOnly" Value="False"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding App.Profile.Difficulty}"
+                     Value="{x:Static core:Difficulty.Bachelor}">
+                    <Setter Property="IsReadOnly" Value="True"/>
+                    <Setter Property="IsHitTestVisible" Value="False"/>
+                    <Setter Property="Opacity" Value="0.98"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Всегда серая 1px рамка; у выбранного — синяя внешняя 3px; размер не меняется -->
+        <Style x:Key="SegmentChoiceToggle" TargetType="ToggleButton">
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Outer" BorderThickness="3" CornerRadius="8"
+                BorderBrush="Transparent" SnapsToDevicePixels="True">
+                            <Border x:Name="Inner" BorderThickness="1" CornerRadius="6"
+                  Background="#F6F6F6" BorderBrush="#D0D0D0"
+                  Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Inner" Property="BorderBrush" Value="#B8B8B8"/>
+                                <Setter TargetName="Inner" Property="Background" Value="#F0F0F0"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Inner" Property="Background" Value="#EAEAEA"/>
+                            </Trigger>
+                            <!-- Выбранный пункт -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Outer" Property="BorderBrush" Value="#2962FF"/>
+                                <Setter TargetName="Inner" Property="Background" Value="#E6F2FF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ПОТОМ стиль WatermarkTextBox -->
+        <Style x:Key="WatermarkTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#C8C8C8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="6">
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="False"/>
+                                <TextBlock x:Name="Watermark"
+                         Text="{TemplateBinding Tag}"
+                         Foreground="#888"
+                         Opacity="0.85"
+                         Margin="{TemplateBinding Padding}"
+                         IsHitTestVisible="False"
+                         VerticalAlignment="Center">
+                                    <TextBlock.Visibility>
+                                        <MultiBinding Converter="{StaticResource WatermarkVisibilityConverter}">
+                                            <!-- читаем уровень из прокси -->
+                                            <Binding Path="Data.Difficulty" Source="{StaticResource ProfileProxy}"/>
+                                            <!-- текст и фокус поля -->
+                                            <Binding Path="Text"              RelativeSource="{RelativeSource TemplatedParent}"/>
+                                            <Binding Path="IsKeyboardFocused" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                        </MultiBinding>
+                                    </TextBlock.Visibility>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F5F5"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#DDDDDD"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#9E9E9E"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3F51B5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Шапка -->
+        <DockPanel Grid.Row="0" Margin="16">
+            <TextBlock DockPanel.Dock="Left"
+                 Text="Анализ внешнего рынка  "
+                 FontSize="32" FontWeight="SemiBold"
+                 VerticalAlignment="Center"/>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Margin="8,0,0,0" Content=" Рассчитать "/>
+                <Button Margin="8,0,0,0" Content=" Загрузить пример "/>
+                <Button Margin="8,0,0,0" Content=" Очистить всё "/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Профиль (вне вкладок) -->
+        <Border Grid.Row="1" Margin="16" Padding="16" CornerRadius="12"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <!-- две широкие колонки под ФИО/Группу и одна под кнопки -->
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="3"
+               Text="Профиль" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                <!-- ФИО -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Text="ФИО"/>
+                    <TextBox Margin="0,4,0,0"
+               Text="{Binding App.Profile.FullName, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <!-- Группа -->
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,12,0">
+                    <TextBlock Text="Группа"/>
+                    <TextBox Margin="0,4,0,0"
+               Text="{Binding App.Profile.Group, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+
+                <!-- Уровень: 3 кнопки -->
+                <StackPanel Grid.Row="1" Grid.Column="2">
+                    <TextBlock Text="Уровень"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <Button Style="{StaticResource DifficultyButtonStyle}"
+                Content="Бакалавр"    Tag="Bachelor"
+                Click="DifficultyButton_Click"/>
+                        <Button Style="{StaticResource DifficultyButtonStyle}"
+                Content="Магистрант"  Tag="Master"
+                Click="DifficultyButton_Click"/>
+                        <Button Style="{StaticResource DifficultyButtonStyle}"
+                Content="Разработчик" Tag="Developer" IsEnabled="False"
+                Click="DifficultyButton_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Табы -->
+        <TabControl x:Name="MainTabs" Grid.Row="2" Margin="16" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+            <!-- 1. Сегмент -->
+            <TabItem Header="1. Сегмент" IsEnabled="{Binding CanTab1}">
+                <Grid Margin="12">
+
+                    <!-- БАКАЛАВР: выбор из 10 сегментов -->
+                    <StackPanel x:Name="BachelorView">
+                        <TextBlock Text="Выберите один из сегментов IT-индустрии" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <UniformGrid Columns="2" Rows="5" Margin="0,8,0,0">
+                            <!-- 1 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Разработка ПО" Tag="Разработка ПО"
+                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 2 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Облако" Tag="Облако"
+                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 3 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Инфо-услуги" Tag="Инфо-услуги"
+                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 4 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Безопасность" Tag="Безопасность"
+                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 5 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Консалтинг" Tag="Консалтинг"
+                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 6 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Big Data" Tag="Big Data"
+                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 7 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Аппаратное обеспечение" Tag="Аппаратное обеспечение"
+                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 8 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="ИИ" Tag="ИИ"
+                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 9 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="E-commerce" Tag="E-commerce"
+                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+
+                            <!-- 10 -->
+                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                Content="Телеком" Tag="Телеком"
+                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
+                                <ToggleButton.IsChecked>
+                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </ToggleButton.IsChecked>
+                            </ToggleButton>
+                        </UniformGrid>
+
+                        <!-- ВИДИМОСТЬ: только для БАКАЛАВРА -->
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}" Value="{x:Static core:Difficulty.Bachelor}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                    </StackPanel>
+
+                    <!-- МАГИСТР/РАЗРАБОТЧИК: свободный ввод -->
+                    <StackPanel x:Name="MasterView">
+                        <TextBlock Text="Название сегмента" FontSize="16" FontWeight="SemiBold"/>
+                        <TextBox Margin="0,8,0,0"
+               Style="{StaticResource WatermarkTextBox}"
+               Tag="Например: Рынок SaaS для SMB"
+               Text="{Binding App.Segment.SegmentName, UpdateSourceTrigger=PropertyChanged}"
+               TextChanged="Segment_TextChanged"/>
+                        <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,8,0,0">
+                            <TextBlock Foreground="#666"
+                   Text="У магистрантов сегмент вводится вручную."/>
+                        </Border>
+
+                        <!-- ВИДИМОСТЬ: для МАГИСТРА и РАЗРАБОТЧИКА -->
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}"
+                         Value="{x:Static core:Difficulty.Master}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}"
+                         Value="{x:Static core:Difficulty.Developer}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                    </StackPanel>
+
+                </Grid>
+            </TabItem>
+
+            <!-- 2. PESTEL -->
+            <TabItem Header="2. PESTEL" IsEnabled="{Binding CanTab2}">
+                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding App.Pestel.Categories}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Margin" Value="0,0,12,12"/>
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="12" BorderBrush="#DDD" BorderThickness="1" CornerRadius="8" Width="360">
+                                    <StackPanel>
+                                        <!-- Заголовок и счетчик -->
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Left"
+                           Text="{Binding Title}"
+                           FontWeight="SemiBold"
+                           FontSize="16"/>
+                                            <Border DockPanel.Dock="Right"
+                        Background="#EFEFEF" CornerRadius="10" Padding="8,2" Margin="8,0,0,0">
+                                                <TextBlock Text="{Binding CompletedCount, StringFormat={}{0}/5}" />
+                                            </Border>
+                                        </DockPanel>
+
+                                        <!-- Пять строк ввода -->
+                                        <TextBox Margin="0,8,0,0"
+                                                 Style="{StaticResource WatermarkTextBox}"
+                                                 Tag="{Binding Hints[0]}"
+                                                 Text="{Binding Field1, UpdateSourceTrigger=PropertyChanged}"
+                                                 TextChanged="PestelField_TextChanged"/>
+
+                                        <TextBox Margin="0,6,0,0"
+                                                 Style="{StaticResource WatermarkTextBox}"
+                                                 Tag="{Binding Hints[1]}"
+                                                 Text="{Binding Field2, UpdateSourceTrigger=PropertyChanged}"
+                                                 TextChanged="PestelField_TextChanged"/>
+
+                                        <TextBox Margin="0,6,0,0"
+                                                 Style="{StaticResource WatermarkTextBox}"
+                                                 Tag="{Binding Hints[2]}"
+                                                 Text="{Binding Field3, UpdateSourceTrigger=PropertyChanged}"
+                                                 TextChanged="PestelField_TextChanged"/>
+
+                                        <TextBox Margin="0,6,0,0"
+                                                 Style="{StaticResource WatermarkTextBox}"
+                                                 Tag="{Binding Hints[3]}"
+                                                 Text="{Binding Field4, UpdateSourceTrigger=PropertyChanged}"
+                                                 TextChanged="PestelField_TextChanged"/>
+
+                                        <TextBox Margin="0,6,0,0"
+                                                 Style="{StaticResource WatermarkTextBox}"
+                                                 Tag="{Binding Hints[4]}"
+                                                 Text="{Binding Field5, UpdateSourceTrigger=PropertyChanged}"
+                                                 TextChanged="PestelField_TextChanged"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 3. Факторы/веса -->
+            <TabItem Header="3. Факторы и веса" IsEnabled="{Binding CanTab3}">
+                <DockPanel Margin="16">
+
+                    <!-- Панель действий -->
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock VerticalAlignment="Center"
+                        Text="{Binding App.Factors.Sum, StringFormat=Сумма весов: {0:0.00}}"
+                        Foreground="{Binding App.Factors.Sum, Converter={StaticResource SumOkToBrushConverter}}"
+                        Margin="0,0,16,0"/>
+                        <!-- Кнопка добавления (для магистра/разработчика; у бакалавра отключена) -->
+                        <Button Content=" Добавить фактор " Click="FactorAdd_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="IsEnabled" Value="True"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="Bachelor">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Список факторов -->
+                    <ItemsControl ItemsSource="{Binding App.Factors.Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Название фактора (у бакалавра — только чтение) -->
+                                    <TextBox Grid.Column="0"
+                                 Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,8,0">
+                                        <TextBox.Style>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="IsReadOnly" Value="False"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="Bachelor">
+                                                        <Setter Property="IsReadOnly" Value="True"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBox.Style>
+                                    </TextBox>
+
+                                    <!-- Вес (0..1). Пустое поле допускается. Нормализация при потере фокуса. -->
+                                    <TextBox Grid.Column="1"
+                                 Text="{Binding WeightText, UpdateSourceTrigger=PropertyChanged}"
+                                 HorizontalContentAlignment="Right"
+                                 PreviewTextInput="FactorWeight_PreviewTextInput"
+                                 LostFocus="FactorWeight_LostFocus"
+                                 Margin="0,0,8,0">
+                                        <TextBox.ToolTip>
+                                            <TextBlock Text="Введите долю от 0 до 1 с запятой: 0,25. Пусто — если ещё не решили." />
+                                        </TextBox.ToolTip>
+                                    </TextBox>
+
+                                    <!-- Удаление/очистка: бакалавр — очистить вес, магистр/разраб — удалить строку -->
+                                    <Button Grid.Column="2"
+        Content="✕"
+        Width="48"
+        Click="FactorRemove_Click"
+        ToolTip="Бакалавр: обнулить вес · Магистр/Разраб: удалить фактор"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </TabItem>
+
+            <!-- 4. Оценка компаний -->
+            <TabItem Header="4. Оценка компаний" IsEnabled="{Binding CanTab4}">
+                <ScrollViewer x:Name="RatingsSV"
+                Margin="12"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled">
+                    <!-- общий scope для SharedSizeGroup -->
+                    <Grid Grid.IsSharedSizeScope="True" Width="{Binding ElementName=RatingsSV, Path=ViewportWidth}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <!-- Заголовки -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Доля рынка -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Строки факторов -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Взвешенный рейтинг -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Заголовки: задаём ширины ОДИН раз -->
+                        <Border Grid.Row="0" Background="#F3F3F3" Margin="0,0,0,8" Padding="8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="1" Text="Вес"         FontWeight="SemiBold" HorizontalAlignment="Center" Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="2" Text="Компания"    FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="3" Text="Конкурент A" FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="4" Text="Конкурент B" FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="5" Text="Конкурент C" FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Доля рынка -->
+                        <Border Grid.Row="1"
+        BorderBrush="#E0E0E0" BorderThickness="1"
+        CornerRadius="6" Padding="6" Margin="0,0,0,8">
+                            <Grid>
+                                <!-- те же ширины, что и в остальных строках -->
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Доля рынка"
+               FontStyle="Italic" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="—"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
+               Margin="8,0,0,0"/>
+
+                                <TextBox Grid.Column="2" Style="{StaticResource RatingCell}"
+             Text="{Binding App.Ratings.MarketMyText, UpdateSourceTrigger=PropertyChanged}"
+             PreviewTextInput="Percent_PreviewTextInput" LostFocus="Percent_LostFocus"/>
+                                <TextBox Grid.Column="3" Style="{StaticResource RatingCell}"
+             Text="{Binding App.Ratings.MarketAText, UpdateSourceTrigger=PropertyChanged}"
+             PreviewTextInput="Percent_PreviewTextInput" LostFocus="Percent_LostFocus"/>
+                                <TextBox Grid.Column="4" Style="{StaticResource RatingCell}"
+             Text="{Binding App.Ratings.MarketBText, UpdateSourceTrigger=PropertyChanged}"
+             PreviewTextInput="Percent_PreviewTextInput" LostFocus="Percent_LostFocus"/>
+                                <TextBox Grid.Column="5" Style="{StaticResource RatingCell}"
+             Text="{Binding App.Ratings.MarketCText, UpdateSourceTrigger=PropertyChanged}"
+             PreviewTextInput="Percent_PreviewTextInput" LostFocus="Percent_LostFocus"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Строки факторов -->
+                        <ItemsControl Grid.Row="2" ItemsSource="{Binding App.Ratings.Rows}">
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="6" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="190"/>
+                                                <ColumnDefinition Width="190"/>
+                                                <ColumnDefinition Width="190"/>
+                                                <ColumnDefinition Width="190"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding Factor.Name}" VerticalAlignment="Center" Padding="2,0"/>
+                                            <TextBlock Grid.Column="1"
+           Text="{Binding Factor.WeightValue, StringFormat={}{0:0.00}}"
+           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0,0,0"/>
+
+                                            <TextBox Grid.Column="2" Style="{StaticResource RatingCell}"
+                         Text="{Binding MyText, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsActive}"
+                         PreviewTextInput="Score_PreviewTextInput" LostFocus="Score_LostFocus"/>
+                                            <TextBox Grid.Column="3" Style="{StaticResource RatingCell}"
+                         Text="{Binding AText, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsActive}"
+                         PreviewTextInput="Score_PreviewTextInput" LostFocus="Score_LostFocus"/>
+                                            <TextBox Grid.Column="4" Style="{StaticResource RatingCell}"
+                         Text="{Binding BText, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsActive}"
+                         PreviewTextInput="Score_PreviewTextInput" LostFocus="Score_LostFocus"/>
+                                            <TextBox Grid.Column="5" Style="{StaticResource RatingCell}"
+                         Text="{Binding CText, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsActive}"
+                         PreviewTextInput="Score_PreviewTextInput" LostFocus="Score_LostFocus"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Взвешенный рейтинг -->
+                        <Border Grid.Row="3"
+        BorderBrush="#E0E0E0" BorderThickness="1"
+        CornerRadius="6" Padding="6" Margin="0,8,0,0">
+                            <Grid>
+                                <!-- те же ширины, что и выше -->
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="190"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+               Text="Взвешенный рейтинг"
+               FontStyle="Italic" FontWeight="SemiBold"
+               VerticalAlignment="Center"/>
+
+                                <!-- столбец "Вес" — тире, с тем же левым зазором -->
+                                <TextBlock Grid.Column="1" Text="—"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
+               Margin="8,0,0,0"/>
+
+                                <!-- значения под Company/A/B/C: тот же левый зазор, выравнивание вправо -->
+                                <TextBlock Grid.Column="2"
+               Text="{Binding App.Ratings.TotalMy, StringFormat={}{0:0.00}}"
+               HorizontalAlignment="Center" FontWeight="SemiBold"
+               Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="3"
+               Text="{Binding App.Ratings.TotalA, StringFormat={}{0:0.00}}"
+               HorizontalAlignment="Center" FontWeight="SemiBold"
+               Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="4"
+               Text="{Binding App.Ratings.TotalB, StringFormat={}{0:0.00}}"
+               HorizontalAlignment="Center" FontWeight="SemiBold"
+               Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="5"
+               Text="{Binding App.Ratings.TotalC, StringFormat={}{0:0.00}}"
+               HorizontalAlignment="Center" FontWeight="SemiBold"
+               Margin="8,0,0,0"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="5. Карты сравнения" IsEnabled="{Binding CanTab5}">
+                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding App.Comparisons.Maps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="3" Padding="12" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- слева: поле -->
+                                            <ColumnDefinition Width="*"/>
+                                            <!-- справа: текстовые поля -->
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <!-- шапка -->
+                                            <RowDefinition Height="*"/>
+                                            <!-- содержимое -->
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Шапка карты -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+                         Margin="0,0,0,8" FontSize="22" FontWeight="SemiBold"
+                         TextWrapping="Wrap">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="Стратегическая карта {0} из {1} —  X: {2}  |  Y: {3}">
+                                                    <Binding Path="Index"/>
+                                                    <Binding Path="Count"/>
+                                                    <Binding Path="TitleX"/>
+                                                    <Binding Path="TitleY"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+
+                                        <!-- ЛЕВАЯ ЧАСТЬ: поле (квадрат 680×680), не влияет на ширину правой колонки -->
+                                        <Border Grid.Row="1" Grid.Column="0"
+                      Margin="8,0,16,0"
+                      HorizontalAlignment="Left"
+                      ClipToBounds="True">
+                                            <ctrls:StrategyMap x:Name="MapView"
+                                   Height="680"
+                                   Width="{Binding ElementName=MapView, Path=Height}"
+                                   HorizontalAlignment="Left"
+                                   Map="{Binding}"/>
+                                        </Border>
+
+                                        <!-- ПРАВАЯ КОЛОНКА: нижнее поле растягивается на всё оставшееся место -->
+                                        <Grid Grid.Row="1" Grid.Column="1" Margin="0,0,0,0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <!-- Заголовок "Пояснение" -->
+                                                <RowDefinition Height="Auto"/>
+                                                <!-- Блок пояснения -->
+                                                <RowDefinition Height="12"/>
+                                                <!-- промежуток -->
+                                                <RowDefinition Height="Auto"/>
+                                                <!-- Заголовок "Направление развития" -->
+                                                <RowDefinition Height="*"/>
+                                                <!-- КРУПНОЕ нижнее поле: тянется -->
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Пояснение -->
+                                            <TextBlock Grid.Row="0" Text="Пояснение" FontWeight="Bold" Margin="0,0,0,6"/>
+                                            <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="White">
+                                                <TextBox x:Name="tbExplanation"
+                 Margin="6"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Disabled"
+                 IsReadOnly="True"
+                 MinHeight="110">
+                                                    <TextBox.Text>
+                                                        <MultiBinding Mode="OneWay" StringFormat="X: {0}&#10;Y: {1}">
+                                                            <Binding Path="TitleX"/>
+                                                            <Binding Path="TitleY"/>
+                                                        </MultiBinding>
+                                                    </TextBox.Text>
+                                                </TextBox>
+                                            </Border>
+
+                                            <!-- Направление развития -->
+                                            <TextBlock Grid.Row="3" Text="Направление развития" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                                            <!-- Единственное большое поле для ввода -->
+                                            <Border Grid.Row="4" BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="White">
+                                                <TextBox
+        Margin="6"
+        AcceptsReturn="True"
+        TextWrapping="Wrap"
+        VerticalScrollBarVisibility="Auto"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalAlignment="Stretch"
+        MinHeight="160"
+        Text="{Binding Direction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        TextChanged="Direction_TextChanged"/>
+                                            </Border>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 6. Итоги -->
+            <TabItem Header="6. Итоги" IsEnabled="{Binding CanTab6}">
+                <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+
+                        <!-- Сводка направлений развития по всем картам -->
+                        <TextBlock Text="Направления развития (из вкладки 5)" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
+                        <ItemsControl ItemsSource="{Binding App.Comparisons.Maps}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="3" Padding="10" Margin="0,0,0,10" Background="White">
+                                        <StackPanel>
+                                            <!-- Заголовок элемента -->
+                                            <TextBlock FontWeight="SemiBold" Margin="0,0,0,6">
+                                                <TextBlock.Text>
+                                                    <MultiBinding StringFormat="X: {0}  |  Y: {1}">
+                                                        <Binding Path="TitleX"/>
+                                                        <Binding Path="TitleY"/>
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+
+                                            <!-- Само «Направление развития» (read-only) -->
+                                            <Border BorderBrush="#EEE" BorderThickness="1" CornerRadius="3">
+                                                <TextBox Margin="6"
+                           IsReadOnly="True"
+                           TextWrapping="Wrap"
+                           AcceptsReturn="True"
+                           VerticalScrollBarVisibility="Auto">
+                                                    <!-- Берём текст из любого подходящего свойства модели карты -->
+                                                    <TextBox.Text>
+                                                        <PriorityBinding>
+                                                            <Binding Path="Direction"/>
+                                                            <Binding Path="DevelopmentDirection"/>
+                                                            <Binding Path="DirectionText"/>
+                                                        </PriorityBinding>
+                                                    </TextBox.Text>
+                                                </TextBox>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Поле 'Итоги' — пустое, пользователь заполняет здесь -->
+                        <TextBlock Text="Итоги" FontWeight="Bold" FontSize="16" Margin="0,8,0,6"/>
+                        <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="White">
+                            <TextBox x:Name="tbFinalSummary"
+                 Margin="6"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Disabled"
+                 MinHeight="220"
+                 Text="{Binding App.Conclusion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <!-- Если свойства App.Conclusion нет в VM, поле просто будет незабинжено, UI всё равно работает -->
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 7. Отчёт (заглушка) -->
+            <TabItem Header="7. Отчёт" IsEnabled="{Binding CanTab7}">
+                <Grid>
+                    <TextBlock Text="Формирование отчёта — в разработке"
+               FontSize="18" Opacity="0.7"
+               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
