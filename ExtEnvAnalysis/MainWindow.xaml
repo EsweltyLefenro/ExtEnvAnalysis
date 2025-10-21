@@ -900,10 +900,22 @@
 
             <!-- 7. Отчёт (заглушка) -->
             <TabItem Header="7. Отчёт" IsEnabled="{Binding CanTab7}">
-                <Grid>
-                    <TextBlock Text="Формирование отчёта — в разработке"
-               FontSize="18" Opacity="0.7"
-               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="Сформировать PDF" Click="Report_Build_Click" Margin="0,0,8,0"/>
+                        <Button Content="Открыть PDF" Click="Report_Open_Click" Margin="0,0,8,0" IsEnabled="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportHasFile}"/>
+                        <Button Content="Сохранить как..." Click="Report_SaveAs_Click" IsEnabled="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportHasFile}"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Text="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportFilePath}" Opacity="0.6" Margin="0,8,0,8"/>
+
+                    <!-- Здесь можно будет вставить WebView2 для inline-превью, если захочешь -->
                 </Grid>
             </TabItem>
         </TabControl>

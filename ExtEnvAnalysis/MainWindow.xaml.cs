@@ -1,17 +1,27 @@
 ﻿using ExtEnvAnalysis.Core;
 using ExtEnvAnalysis.Models;
+using ExtEnvAnalysis.Services;
 using ExtEnvAnalysis.ViewModels;
+using Microsoft.Win32;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.ComponentModel;
+
 
 namespace ExtEnvAnalysis;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void Raise([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     public MainViewModel VM { get; } = new();
 
     public MainWindow()
@@ -259,4 +269,59 @@ public partial class MainWindow : Window
             vm.NotifyRulesChanged(); // этот метод уже должен дергать OnPropertyChanged для CanTab*
     }
 
+    // 7 вкл
+    public string? ReportFilePath { get; set; }
+    public bool ReportHasFile => !string.IsNullOrWhiteSpace(ReportFilePath) && File.Exists(ReportFilePath);
+
+    private void UpdateReportBindings()
+    {
+        Raise(nameof(ReportFilePath));
+        Raise(nameof(ReportHasFile));
+    }
+
+    private void Report_Build_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            try
+            {
+                // Предполагаю, что итоговый текст хранится в vm.App.Report.Conclusion
+                // (мы его уже биндили на вкладке 6 в tbFinalSummary).
+                // Если имя другое — поправь в ReportBuilder.
+                string path = ReportBuilder.BuildPdf(vm.App);
+                ReportFilePath = path;
+                UpdateReportBindings();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Ошибка формирования отчёта:\n{ex.Message}", "Отчёт", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void Report_Open_Click(object sender, RoutedEventArgs e)
+    {
+        if (ReportHasFile)
+        {
+            try { Process.Start(new ProcessStartInfo(ReportFilePath!) { UseShellExecute = true }); }
+            catch (Exception ex)
+            { MessageBox.Show(this, $"Не удалось открыть файл:\n{ex.Message}"); }
+        }
+    }
+
+    private void Report_SaveAs_Click(object sender, RoutedEventArgs e)
+    {
+        if (!ReportHasFile) return;
+        var dlg = new SaveFileDialog
+        {
+            Filter = "PDF (*.pdf)|*.pdf",
+            FileName = Path.GetFileName(ReportFilePath)
+        };
+        if (dlg.ShowDialog(this) == true)
+        {
+            try { File.Copy(ReportFilePath!, dlg.FileName, overwrite: true); }
+            catch (Exception ex)
+            { MessageBox.Show(this, $"Не удалось сохранить:\n{ex.Message}"); }
+        }
+    }
 }
