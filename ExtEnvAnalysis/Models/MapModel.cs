@@ -15,6 +15,7 @@ namespace ExtEnvAnalysis.Models
 
     public sealed class MapModel : INotifyPropertyChanged
     {
+        public string[] Names { get; set; } = new[] { "Мы", "A", "B", "C" };
         public int Index { get; set; }
         public int Count { get; set; }
         public string TitleX { get; set; } = "";

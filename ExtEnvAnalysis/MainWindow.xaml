@@ -5,9 +5,11 @@
         xmlns:core="clr-namespace:ExtEnvAnalysis.Core"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:ExtEnvAnalysis"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:conv="clr-namespace:ExtEnvAnalysis.Converters"
         xmlns:ctrls="clr-namespace:ExtEnvAnalysis.Controls"
-        Title="Анализ внешнего рынка" Width="1920" Height="1080"
+        xmlns:vm="clr-namespace:ExtEnvAnalysis.ViewModels"
+        Title="Анализ внешней среды" Width="1600" Height="900"
         WindowStartupLocation="CenterScreen"
         FontSize="28">
     <Window.Resources>
@@ -16,6 +18,7 @@
         <conv:WatermarkVisibilityConverter x:Key="WatermarkVisibilityConverter" />
         <conv:SegmentSelectedConverter x:Key="SegmentSelectedConverter" />
         <conv:SumOkToBrushConverter x:Key="SumOkToBrushConverter" />
+        <conv:NotEmptyToBoolConverter x:Key="NotEmptyToBool" />
 
         <Style x:Key="RatingCell" TargetType="TextBox">
             <Setter Property="HorizontalContentAlignment" Value="Right"/>
@@ -121,21 +124,38 @@
                             <Grid>
                                 <ScrollViewer x:Name="PART_ContentHost" Focusable="False"/>
                                 <TextBlock x:Name="Watermark"
-                         Text="{TemplateBinding Tag}"
-                         Foreground="#888"
-                         Opacity="0.85"
-                         Margin="{TemplateBinding Padding}"
-                         IsHitTestVisible="False"
-                         VerticalAlignment="Center">
-                                    <TextBlock.Visibility>
-                                        <MultiBinding Converter="{StaticResource WatermarkVisibilityConverter}">
-                                            <!-- читаем уровень из прокси -->
-                                            <Binding Path="Data.Difficulty" Source="{StaticResource ProfileProxy}"/>
-                                            <!-- текст и фокус поля -->
-                                            <Binding Path="Text"              RelativeSource="{RelativeSource TemplatedParent}"/>
-                                            <Binding Path="IsKeyboardFocused" RelativeSource="{RelativeSource TemplatedParent}"/>
-                                        </MultiBinding>
-                                    </TextBlock.Visibility>
+           Text="{TemplateBinding Tag}"
+           Foreground="#888"
+           Opacity="0.85"
+           Margin="{TemplateBinding Padding}"
+           IsHitTestVisible="False"
+           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <!-- Бакалавр: если текст пуст и поле не в фокусе — показать watermark -->
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}}" Value=""/>
+                                                        <Condition Binding="{Binding Path=IsKeyboardFocused, RelativeSource={RelativeSource TemplatedParent}}" Value="False"/>
+                                                        <Condition Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Static core:Difficulty.Bachelor}"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+
+                                                <!-- Разработчик: ровно те же условия, что у бакалавра -->
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}}" Value=""/>
+                                                        <Condition Binding="{Binding Path=IsKeyboardFocused, RelativeSource={RelativeSource TemplatedParent}}" Value="False"/>
+                                                        <Condition Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Static core:Difficulty.Developer}"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
                                 </TextBlock>
                             </Grid>
                         </Border>
@@ -156,6 +176,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -167,14 +188,9 @@
         <!-- Шапка -->
         <DockPanel Grid.Row="0" Margin="16">
             <TextBlock DockPanel.Dock="Left"
-                 Text="Анализ внешнего рынка  "
+                 Text="Анализ внешней среды  "
                  FontSize="32" FontWeight="SemiBold"
                  VerticalAlignment="Center"/>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Margin="8,0,0,0" Content=" Рассчитать "/>
-                <Button Margin="8,0,0,0" Content=" Загрузить пример "/>
-                <Button Margin="8,0,0,0" Content=" Очистить всё "/>
-            </StackPanel>
         </DockPanel>
 
         <!-- Профиль (вне вкладок) -->
@@ -187,9 +203,9 @@
                 </Grid.RowDefinitions>
                 <!-- две широкие колонки под ФИО/Группу и одна под кнопки -->
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="3*"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.ColumnSpan="3"
@@ -209,7 +225,7 @@
                Text="{Binding App.Profile.Group, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
-                <!-- Уровень: 3 кнопки -->
+                <!-- Уровень: 3 кнопки ( IsEnabled="False" ) -->
                 <StackPanel Grid.Row="1" Grid.Column="2">
                     <TextBlock Text="Уровень"/>
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -217,10 +233,10 @@
                 Content="Бакалавр"    Tag="Bachelor"
                 Click="DifficultyButton_Click"/>
                         <Button Style="{StaticResource DifficultyButtonStyle}"
-                Content="Магистрант"  Tag="Master"
+                Content="Магистрант"  Tag="Master" IsEnabled="False"
                 Click="DifficultyButton_Click"/>
                         <Button Style="{StaticResource DifficultyButtonStyle}"
-                Content="Разработчик" Tag="Developer" IsEnabled="False"
+                Content="Разработчик" Tag="Developer"
                 Click="DifficultyButton_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -239,7 +255,7 @@
                         <UniformGrid Columns="2" Rows="5" Margin="0,8,0,0">
                             <!-- 1 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Разработка ПО" Tag="Разработка ПО"
+                Content="Разработка программного обеспечения" Tag="Разработка программного обеспечения"
                 Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -252,7 +268,7 @@
 
                             <!-- 2 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Облако" Tag="Облако"
+                Content="Облачные технологии" Tag="Облачные технологии"
                 Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -265,7 +281,7 @@
 
                             <!-- 3 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Инфо-услуги" Tag="Инфо-услуги"
+                Content="Информационные услуги" Tag="Информационные услуги"
                 Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -278,7 +294,7 @@
 
                             <!-- 4 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Безопасность" Tag="Безопасность"
+                Content="Кибербезопасность" Tag="Кибербезопасность"
                 Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -291,7 +307,7 @@
 
                             <!-- 5 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Консалтинг" Tag="Консалтинг"
+                Content="Консультационные услуги" Tag="Консультационные услуги"
                 Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -304,7 +320,7 @@
 
                             <!-- 6 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Big Data" Tag="Big Data"
+                Content="Аналитика данных" Tag="Аналитика данных"
                 Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -330,7 +346,7 @@
 
                             <!-- 8 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="ИИ" Tag="ИИ"
+                Content="Искусственный интеллект" Tag="Искусственный интеллект"
                 Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -343,7 +359,7 @@
 
                             <!-- 9 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="E-commerce" Tag="E-commerce"
+                Content="Электронная коммерция" Tag="Электронная коммерция"
                 Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -356,7 +372,7 @@
 
                             <!-- 10 -->
                             <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Телеком" Tag="Телеком"
+                Content="Телекоммуникации" Tag="Телекоммуникации"
                 Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
                                 <ToggleButton.IsChecked>
                                     <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
@@ -374,6 +390,9 @@
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding App.Profile.Difficulty}" Value="{x:Static core:Difficulty.Bachelor}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}" Value="{x:Static core:Difficulty.Developer}">
                                         <Setter Property="Visibility" Value="Visible"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -394,17 +413,13 @@
                    Text="У магистрантов сегмент вводится вручную."/>
                         </Border>
 
-                        <!-- ВИДИМОСТЬ: для МАГИСТРА и РАЗРАБОТЧИКА -->
+                        <!-- ВИДИМОСТЬ: для МАГИСТРА -->
                         <StackPanel.Style>
                             <Style TargetType="StackPanel">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding App.Profile.Difficulty}"
                          Value="{x:Static core:Difficulty.Master}">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}"
-                         Value="{x:Static core:Difficulty.Developer}">
                                         <Setter Property="Visibility" Value="Visible"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -580,22 +595,41 @@
                         </Grid.RowDefinitions>
 
                         <!-- Заголовки: задаём ширины ОДИН раз -->
-                        <Border Grid.Row="0" Background="#F3F3F3" Margin="0,0,0,8" Padding="8">
+                        <Border Grid.Row="0" Background="#F3F3F3" BorderThickness="1" CornerRadius="6" Padding="6" Margin="0,0,0,8">
+                            <!-- ШАПКА ТАБЛИЦЫ ОЦЕНКИ КОМПАНИЙ -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
+                                    <!-- Вес -->
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
+                                    <!-- Фактор -->
+                                    <ColumnDefinition Width="210"/>
+                                    <!-- МЫ -->
+                                    <ColumnDefinition Width="210"/>
+                                    <!-- A -->
+                                    <ColumnDefinition Width="210"/>
+                                    <!-- B -->
+                                    <ColumnDefinition Width="210"/>
+                                    <!-- C -->
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="1" Text="Вес"         FontWeight="SemiBold" HorizontalAlignment="Center" Margin="8,0,0,0"/>
-                                <TextBlock Grid.Column="2" Text="Компания"    FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
-                                <TextBlock Grid.Column="3" Text="Конкурент A" FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
-                                <TextBlock Grid.Column="4" Text="Конкурент B" FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
-                                <TextBlock Grid.Column="5" Text="Конкурент C" FontWeight="SemiBold" TextAlignment="Center"       Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="1" Text="Вес" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="Фактор" FontWeight="Bold" Margin="0,0,12,0"/>
+
+                                <!-- «Мы» — НЕ редактируется -->
+                                <TextBlock Grid.Column="2" Text="Мы"
+             FontWeight="Bold" HorizontalAlignment="Center"/>
+
+                                <!-- Остальные — редактируемые -->
+                                <TextBox Grid.Column="3" Style="{StaticResource RatingCell}"
+           Text="{Binding App.Ratings.CompanyAName, UpdateSourceTrigger=PropertyChanged}"
+           HorizontalContentAlignment="Center" FontWeight="Bold"/>
+                                <TextBox Grid.Column="4" Style="{StaticResource RatingCell}"
+           Text="{Binding App.Ratings.CompanyBName, UpdateSourceTrigger=PropertyChanged}"
+           HorizontalContentAlignment="Center" FontWeight="Bold"/>
+                                <TextBox Grid.Column="5" Style="{StaticResource RatingCell}"
+           Text="{Binding App.Ratings.CompanyCName, UpdateSourceTrigger=PropertyChanged}"
+           HorizontalContentAlignment="Center" FontWeight="Bold"/>
                             </Grid>
                         </Border>
 
@@ -608,10 +642,10 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="210"/>
+                                    <ColumnDefinition Width="210"/>
+                                    <ColumnDefinition Width="210"/>
+                                    <ColumnDefinition Width="210"/>
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0" Text="Доля рынка"
@@ -649,10 +683,10 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="190"/>
-                                                <ColumnDefinition Width="190"/>
-                                                <ColumnDefinition Width="190"/>
-                                                <ColumnDefinition Width="190"/>
+                                                <ColumnDefinition Width="210"/>
+                                                <ColumnDefinition Width="210"/>
+                                                <ColumnDefinition Width="210"/>
+                                                <ColumnDefinition Width="210"/>
                                             </Grid.ColumnDefinitions>
 
                                             <TextBlock Grid.Column="0" Text="{Binding Factor.Name}" VerticalAlignment="Center" Padding="2,0"/>
@@ -691,10 +725,10 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
-                                    <ColumnDefinition Width="190"/>
+                                    <ColumnDefinition Width="210"/>
+                                    <ColumnDefinition Width="210"/>
+                                    <ColumnDefinition Width="210"/>
+                                    <ColumnDefinition Width="210"/>
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0"
@@ -861,10 +895,10 @@
                                             <!-- Само «Направление развития» (read-only) -->
                                             <Border BorderBrush="#EEE" BorderThickness="1" CornerRadius="3">
                                                 <TextBox Margin="6"
-                           IsReadOnly="True"
-                           TextWrapping="Wrap"
-                           AcceptsReturn="True"
-                           VerticalScrollBarVisibility="Auto">
+                                                   IsReadOnly="True"
+                                                   TextWrapping="Wrap"
+                                                   AcceptsReturn="True"
+                                                   VerticalScrollBarVisibility="Auto">
                                                     <!-- Берём текст из любого подходящего свойства модели карты -->
                                                     <TextBox.Text>
                                                         <PriorityBinding>
@@ -880,7 +914,6 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-
                         <!-- Поле 'Итоги' — пустое, пользователь заполняет здесь -->
                         <TextBlock Text="Итоги" FontWeight="Bold" FontSize="16" Margin="0,8,0,6"/>
                         <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="White">
@@ -891,14 +924,14 @@
                  VerticalScrollBarVisibility="Auto"
                  HorizontalScrollBarVisibility="Disabled"
                  MinHeight="220"
-                 Text="{Binding App.Conclusion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                 Text="{Binding App.Report.Conclusion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             <!-- Если свойства App.Conclusion нет в VM, поле просто будет незабинжено, UI всё равно работает -->
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 7. Отчёт (заглушка) -->
+            <!-- 7. Отчёт -->
             <TabItem Header="7. Отчёт" IsEnabled="{Binding CanTab7}">
                 <Grid Margin="16">
                     <Grid.RowDefinitions>
@@ -908,12 +941,12 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button Content="Сформировать PDF" Click="Report_Build_Click" Margin="0,0,8,0"/>
-                        <Button Content="Открыть PDF" Click="Report_Open_Click" Margin="0,0,8,0" IsEnabled="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportHasFile}"/>
-                        <Button Content="Сохранить как..." Click="Report_SaveAs_Click" IsEnabled="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportHasFile}"/>
+                        <Button Content=" Сформировать PDF " Click="Report_Build_Click" Margin="0,0,8,0"/>
+                        <Button Content=" Открыть PDF " Click="Report_Open_Click" Margin="0,0,8,0" IsEnabled="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportHasFile}"/>
+                        <Button Content=" Сохранить как... " Click="Report_SaveAs_Click" IsEnabled="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportHasFile}"/>
                     </StackPanel>
 
-                    <TextBlock Grid.Row="1" Text="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportFilePath}" Opacity="0.6" Margin="0,8,0,8"/>
+                    <!--  <TextBlock Grid.Row="1" Text="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportFilePath}" Opacity="0.6" Margin="0,8,0,8"/>  -->
 
                     <!-- Здесь можно будет вставить WebView2 для inline-превью, если захочешь -->
                 </Grid>

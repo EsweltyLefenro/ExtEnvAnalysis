@@ -1,4 +1,5 @@
-﻿using ExtEnvAnalysis.Core;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using ExtEnvAnalysis.Core;
 using ExtEnvAnalysis.Models;
 using ExtEnvAnalysis.Services;
 using ExtEnvAnalysis.ViewModels;
@@ -12,7 +13,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.ComponentModel;
 
 
 namespace ExtEnvAnalysis;
@@ -28,6 +28,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         DataContext = VM;
+
+        var vm = DataContext as ExtEnvAnalysis.ViewModels.MainViewModel;
+        if (vm == null) return;
 
         // когда модель говорит «правила изменились» — обновляем UI
         VM.App.RulesChanged += () => Dispatcher.Invoke(VM.NotifyRulesChanged);
@@ -52,16 +55,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // общий обработчик для удаления/очистки для всех вариаций кнопки
     private void FactorDeleteOrClear(FactorRow row)
     {
-        if (VM.App.Profile.Difficulty == Difficulty.Bachelor)
+        if (VM.App.Profile.Difficulty is Difficulty.Bachelor or Difficulty.Developer)
         {
-            // бакалавр: фактор оставляем, вес очищаем
-            row.WeightText = "";                 // пусто => вес 0
-            VM.App.FactorsChanged();             // пересчёт сумм, рейтингов и карт
+            // бакалавр/разработчик: фактор оставляем, вес обнуляем
+            row.WeightText = "";   // пусто => вес 0
+            VM.App.FactorsChanged();
             VM.NotifyRulesChanged();
         }
         else
         {
-            // магистр/разработчик: удаляем строку факторов
+            // магистрант: удаляем строку факторов
             VM.App.Factors.RemoveRow(row);
             VM.App.FactorsChanged();
             VM.NotifyRulesChanged();
@@ -124,6 +127,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.App.Profile.Group = group;
         VM.App.Profile.Difficulty = newLevel;
 
+        if (newLevel == Difficulty.Developer)
+            VM.App.ApplyDeveloperPreset();   // сразу предзаполнить
+
         VM.SelectedTabIndex = 0;
         VM.NotifyRulesChanged();
     }
@@ -173,7 +179,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             (tb.Text ?? string.Empty).Contains(",") &&
             !(tb.SelectedText ?? string.Empty).Contains(",");
 
-        // Знак разделителя: '.' -> ','; ',' оставляем как есть
+        // Знак разделителя: '.' меняем на ','
         if (ch == '.' || ch == ',')
         {
             // Разрешаем только одну запятую в результате
@@ -216,7 +222,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.App.Factors.AddRow();
         VM.App.Factors.Recalculate(VM.App.Profile.Difficulty);
 
-        VM.App.FactorsChanged();      // NEW
+        VM.App.FactorsChanged();
         VM.NotifyRulesChanged();
     }
 
@@ -281,21 +287,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void Report_Build_Click(object sender, RoutedEventArgs e)
     {
-        if (DataContext is MainViewModel vm)
+        if (DataContext is not MainViewModel vm) return;
+
+        vm.App.Factors.Recalculate(vm.App.Profile.Difficulty);
+        vm.App.Ratings.Recalculate();
+
+        // Тут типа проверка была бы
+        //var errors = vm.App.GetBlockingErrorsForReport();
+        //if (errors.Count > 0)
+        //{
+        //    MessageBox.Show("Нужно исправить:\n\n• " + string.Join("\n• ", errors),
+        //                    "Проверки перед отчётом",
+        //                    MessageBoxButton.OK, MessageBoxImage.Warning);
+        //    return;
+        //}
+
+        try
         {
-            try
-            {
-                // Предполагаю, что итоговый текст хранится в vm.App.Report.Conclusion
-                // (мы его уже биндили на вкладке 6 в tbFinalSummary).
-                // Если имя другое — поправь в ReportBuilder.
-                string path = ReportBuilder.BuildPdf(vm.App);
-                ReportFilePath = path;
-                UpdateReportBindings();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, $"Ошибка формирования отчёта:\n{ex.Message}", "Отчёт", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            string path = ReportBuilder.BuildPdf(vm.App);
+            ReportFilePath = path;
+            UpdateReportBindings();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Ошибка генерации отчёта:\n" + ex.Message,
+                            "ReportBuilder", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -324,4 +340,5 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             { MessageBox.Show(this, $"Не удалось сохранить:\n{ex.Message}"); }
         }
     }
+
 }

@@ -142,7 +142,7 @@ namespace ExtEnvAnalysis.Core
         public void RecalculateTotals() => Recalculate();
         public void Touch() => Recalculate();
 
-        private static bool TryScore(string? t, out int v)
+        internal static bool TryScore(string? t, out int v)
         {
             v = 0;
             if (string.IsNullOrWhiteSpace(t)) return false;
@@ -152,11 +152,96 @@ namespace ExtEnvAnalysis.Core
             return true;
         }
 
-        private static bool TryPercent(string? t)
+        internal static bool TryPercent(string? t)
         {
             if (string.IsNullOrWhiteSpace(t)) return false;
             if (!int.TryParse(t.Trim(), out var v)) return false;
             return v >= 0 && v <= 100;
+        }
+
+        // ===== ДОЛИ РЫНКА ДЛЯ ОТЧЁТА =====
+
+        private static double ParsePercent01(string? t)
+        {
+            if (!TryPercent(t)) return 0.0;
+            _ = int.TryParse(t!.Trim(), out var v);
+            if (v < 0) v = 0; if (v > 100) v = 100;
+            return v / 100.0;
+        }
+
+        public double[] GetShares01()
+        {
+            int v;
+            double clamp01(string? s)
+            {
+                if (!int.TryParse((s ?? "").Trim(), out v)) v = 0;
+                if (v < 0) v = 0; if (v > 100) v = 100;
+                return v / 100.0;
+            }
+            return new[]
+            {
+                clamp01(MarketMyText),
+                clamp01(MarketAText),
+                clamp01(MarketBText),
+                clamp01(MarketCText)
+            };
+        }
+
+        // === Названия компаний (редактируемые пользователем) ===
+        private string _companyMyName = "Мы";
+        public string CompanyMyName
+        {
+            get => _companyMyName;
+            set { if (_companyMyName != value) { _companyMyName = value; OnPropertyChanged(nameof(CompanyMyName)); } }
+        }
+
+        private string _companyAName = "Компания 1";
+        public string CompanyAName
+        {
+            get => _companyAName;
+            set { if (_companyAName != value) { _companyAName = value; OnPropertyChanged(nameof(CompanyAName)); } }
+        }
+
+        private string _companyBName = "Компания 2";
+        public string CompanyBName
+        {
+            get => _companyBName;
+            set { if (_companyBName != value) { _companyBName = value; OnPropertyChanged(nameof(CompanyBName)); } }
+        }
+
+        private string _companyCName = "Компания 3";
+        public string CompanyCName
+        {
+            get => _companyCName;
+            set { if (_companyCName != value) { _companyCName = value; OnPropertyChanged(nameof(CompanyCName)); } }
+        }
+
+
+        public void ApplyPresetDeveloper()
+        {
+            // 1) Доля рынка — заполняем ТОЛЬКО если пусто
+            if (string.IsNullOrWhiteSpace(MarketMyText)) MarketMyText = "20";
+            if (string.IsNullOrWhiteSpace(MarketAText)) MarketAText = "30";
+            if (string.IsNullOrWhiteSpace(MarketBText)) MarketBText = "25";
+            if (string.IsNullOrWhiteSpace(MarketCText)) MarketCText = "25";
+
+            // 2) Оценки по факторам — для всех незаполненных ячеек ставим случайные целые 1..10
+            var rnd = new Random(Environment.TickCount);
+            string Next() => rnd.Next(1, 11).ToString();
+
+            foreach (var row in Rows)
+            {
+                // Если хочешь только по «активным» факторам — оставь условие:
+                // if (!row.IsActive) continue;
+
+                if (string.IsNullOrWhiteSpace(row.MyText)) row.MyText = Next();
+                if (string.IsNullOrWhiteSpace(row.AText)) row.AText = Next();
+                if (string.IsNullOrWhiteSpace(row.BText)) row.BText = Next();
+                if (string.IsNullOrWhiteSpace(row.CText)) row.CText = Next();
+            }
+
+            // 3) Пересчитать итоги валидности/сумм
+            Recalculate();
         }
 
     }

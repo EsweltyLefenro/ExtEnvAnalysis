@@ -250,11 +250,21 @@ namespace ExtEnvAnalysis.Controls
                 Plot.Children.Add(tblock);
             }
 
-            // Точки компаний
-            DrawPoint(Map.Me, "Мы", Brushes.RoyalBlue);
-            DrawPoint(Map.A, "A", Brushes.Goldenrod);
-            DrawPoint(Map.B, "B", Brushes.MediumSeaGreen);
-            DrawPoint(Map.C, "C", Brushes.IndianRed);
+            // выбираем подпись: сначала CompanyPoint.Label, потом Map.Names[i], потом дефолт
+            string LabelOrDefault(CompanyPoint p, int i)
+            {
+                if (!string.IsNullOrWhiteSpace(p.Label)) return p.Label!;
+                if (Map?.Names != null && i >= 0 && i < Map.Names.Length && !string.IsNullOrWhiteSpace(Map.Names[i]))
+                    return Map.Names[i]!;
+                return i switch { 0 => "Мы", 1 => "A", 2 => "B", 3 => "C", _ => "?" };
+            }
+
+            // Точки компаний: берём кисть из модели, если задана (иначе дефолт)
+            DrawPoint(Map.Me, LabelOrDefault(Map.Me, 0), Map.Me.Brush ?? Brushes.RoyalBlue);
+            DrawPoint(Map.A, LabelOrDefault(Map.A, 1), Map.A.Brush ?? Brushes.Goldenrod);
+            DrawPoint(Map.B, LabelOrDefault(Map.B, 2), Map.B.Brush ?? Brushes.MediumSeaGreen);
+            DrawPoint(Map.C, LabelOrDefault(Map.C, 3), Map.C.Brush ?? Brushes.IndianRed);
+
         }
     }
 }

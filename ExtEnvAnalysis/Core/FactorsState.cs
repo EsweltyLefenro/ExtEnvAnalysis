@@ -13,6 +13,7 @@ namespace ExtEnvAnalysis.Core
 
         [ObservableProperty] private bool isValid;
         [ObservableProperty] private double sum; // сумма 0..1
+        private Difficulty _lastLevel = Difficulty.Bachelor;
 
         public FactorsState()
         {
@@ -73,12 +74,13 @@ namespace ExtEnvAnalysis.Core
             {
                 Rows.Remove(row);
                 Reindex();
-                Recalculate(Difficulty.Master);
+                Recalculate(_lastLevel);
             }
         }
 
         public void Recalculate(Difficulty level)
         {
+            _lastLevel = level;   // запомним, чтобы внутренние вызовы не слетали в Master
             AttachRowHandlers();
 
             double s = 0;
@@ -96,7 +98,7 @@ namespace ExtEnvAnalysis.Core
             Sum = s;
 
             bool namesOk = Rows.Count > 0 && Rows.All(r => !string.IsNullOrWhiteSpace(r.Name));
-            bool countOk = Rows.Count >= (level == Difficulty.Bachelor ? 10 : 2);
+            bool countOk = Rows.Count >= ((level == Difficulty.Bachelor || level == Difficulty.Developer) ? 10 : 2);
             bool sumOk = Math.Abs(s - 1.0) <= 0.005;
 
             IsValid = namesOk && countOk && sumOk && allWeightsValid;
@@ -128,7 +130,7 @@ namespace ExtEnvAnalysis.Core
         {
             if (e.PropertyName == nameof(FactorRow.Name) || e.PropertyName == nameof(FactorRow.WeightText))
             {
-                Recalculate(Difficulty.Master);
+                Recalculate(_lastLevel);
             }
         }
 
@@ -136,6 +138,35 @@ namespace ExtEnvAnalysis.Core
         {
             int i = 0;
             foreach (var r in Rows) r.Index = i++;
+        }
+
+        public void ApplyPresetDeveloper()
+        {
+            Rows.Clear();
+
+            void Add(string name, double w)
+            {
+                var row = new FactorRow
+                {
+                    Name = name
+                };
+
+                // ВЕС ТОЛЬКО ЧЕРЕЗ ТЕКСТ, чтобы модель сама посчитала WeightValue
+                try { row.WeightText = w.ToString("0.00"); } catch { /* ok */ }
+
+                Rows.Add(row);
+            }
+
+            Add("Соответствие реестру Минцифры", 0.20);
+            Add("Совместимость с legacy-системами", 0.15);
+            Add("Стоимость лицензии/подписки", 0.15);
+            Add("Локализация и хранение данных (ФЗ-152)", 0.10);
+            Add("Качество техподдержки (SLA)", 0.10);
+            Add("Безопасность/сертификация ФСТЭК", 0.10);
+            Add("Удобство интерфейса (UX)", 0.10);
+            Add("API и интеграции (1С, Госуслуги)", 0.08);
+            Add("Масштабируемость/производительность", 0.00);
+            Add("Открытый код/исходники (импортозамещение)", 0.02);
         }
     }
 }

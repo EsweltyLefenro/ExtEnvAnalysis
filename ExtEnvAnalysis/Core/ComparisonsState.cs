@@ -21,6 +21,19 @@ namespace ExtEnvAnalysis.Core
             return double.TryParse(s.Replace('.', ','), NumberStyles.Float, ru, out var v) ? v : 0;
         }
 
+        // Единые цвета для точек на карте
+        private static readonly SolidColorBrush MeBrush = CreateBrush(Color.FromRgb(33, 150, 243));   // синий
+        private static readonly SolidColorBrush ABrush = CreateBrush(Color.FromRgb(255, 152, 0));    // оранжевый
+        private static readonly SolidColorBrush BBrush = CreateBrush(Color.FromRgb(120, 144, 156));  // серый
+        private static readonly SolidColorBrush CBrush = CreateBrush(Color.FromRgb(156, 39, 176));   // фиолетовый
+
+        private static SolidColorBrush CreateBrush(Color c)
+        {
+            var b = new SolidColorBrush(c);
+            b.Freeze(); // чтобы не плодить изменяемые объекты
+            return b;
+        }
+
         public void Rebuild(FactorsState factors, RatingsState ratings)
         {
             Maps.Clear();
@@ -50,16 +63,28 @@ namespace ExtEnvAnalysis.Core
                         TitleX = rX.Factor.Name,
                         TitleY = rY.Factor.Name,
 
-                        Me = new CompanyPoint { Label = "Мы", X = rX.MyValue, Y = rY.MyValue, Market = mMe, Brush = Brushes.RoyalBlue },
-                        A = new CompanyPoint { Label = "A", X = rX.AValue, Y = rY.AValue, Market = mA, Brush = Brushes.Goldenrod },
-                        B = new CompanyPoint { Label = "B", X = rX.BValue, Y = rY.BValue, Market = mB, Brush = Brushes.MediumSeaGreen },
-                        C = new CompanyPoint { Label = "C", X = rX.CValue, Y = rY.CValue, Market = mC, Brush = Brushes.IndianRed },
+                        // подписи берём из ratings
+                        Me = new CompanyPoint { Label = ratings.CompanyMyName, X = rX.MyValue, Y = rY.MyValue, Market = mMe, Brush = MeBrush },
+                        A = new CompanyPoint { Label = ratings.CompanyAName, X = rX.AValue, Y = rY.AValue, Market = mA, Brush = ABrush },
+                        B = new CompanyPoint { Label = ratings.CompanyBName, X = rX.BValue, Y = rY.BValue, Market = mB, Brush = BBrush },
+                        C = new CompanyPoint { Label = ratings.CompanyCName, X = rX.CValue, Y = rY.CValue, Market = mC, Brush = CBrush },
 
-                        Explanation = $"X: {rX.Factor.Name}\nY: {rY.Factor.Name}",
+                        // дубль в массив имён — вдруг позже решишь очищать Label и опираться на Names
+                        Names = new[] { ratings.CompanyMyName, ratings.CompanyAName, ratings.CompanyBName, ratings.CompanyCName },
+
+                        Explanation = $"X: {rX.Factor.Name}\nY: {rY.Factor.Name}\nПодсказка: отметьте лидеров по осям и зоны роста.",
                         Direction = ""
                     };
 
                     Maps.Add(map);
+
+                    map.Names = new[]
+                    {
+                        ratings?.CompanyMyName ?? "Мы",
+                        ratings?.CompanyAName  ?? "A",
+                        ratings?.CompanyBName  ?? "B",
+                        ratings?.CompanyCName  ?? "C"
+                    };
                 }
         }
     }

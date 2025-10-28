@@ -6,4 +6,5 @@ public partial class ReportState : ObservableObject, ISection
 {
     public bool IsValid { get; set; } = false;
     public void Reset() => IsValid = false;
+    [ObservableProperty] private string? conclusion;
 }
