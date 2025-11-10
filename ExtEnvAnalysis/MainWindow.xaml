@@ -19,6 +19,11 @@
         <conv:SegmentSelectedConverter x:Key="SegmentSelectedConverter" />
         <conv:SumOkToBrushConverter x:Key="SumOkToBrushConverter" />
         <conv:NotEmptyToBoolConverter x:Key="NotEmptyToBool" />
+        <TextBlock x:Key="TabIntro"
+           FontSize="24"
+           FontWeight="SemiBold"
+           Margin="0,0,0,8"
+           TextWrapping="Wrap"/>
 
         <Style x:Key="RatingCell" TargetType="TextBox">
             <Setter Property="HorizontalContentAlignment" Value="Right"/>
@@ -236,7 +241,7 @@
                 Content="Магистрант"  Tag="Master" IsEnabled="False"
                 Click="DifficultyButton_Click"/>
                         <Button Style="{StaticResource DifficultyButtonStyle}"
-                Content="Разработчик" Tag="Developer"
+                Content="Разработчик" Tag="Developer" IsEnabled="False"
                 Click="DifficultyButton_Click"/>
                     </StackPanel>
                 </StackPanel>
@@ -247,187 +252,209 @@
         <TabControl x:Name="MainTabs" Grid.Row="2" Margin="16" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
             <!-- 1. Сегмент -->
             <TabItem Header="1. Сегмент" IsEnabled="{Binding CanTab1}">
-                <Grid Margin="12">
+                <ScrollViewer x:Name="SegmentSV"
+                Margin="12"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled"
+                CanContentScroll="True">
 
-                    <!-- БАКАЛАВР: выбор из 10 сегментов -->
-                    <StackPanel x:Name="BachelorView">
-                        <TextBlock Text="Выберите один из сегментов IT-индустрии" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                        <UniformGrid Columns="2" Rows="5" Margin="0,8,0,0">
-                            <!-- 1 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Разработка программного обеспечения" Tag="Разработка программного обеспечения"
-                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                    <!-- У ScrollViewer ровно один ребёнок -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
 
-                            <!-- 2 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Облачные технологии" Tag="Облачные технологии"
-                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                        <!-- БАКАЛАВР/РАЗРАБОТЧИК: выбор из 10 сегментов -->
+                        <StackPanel x:Name="BachelorView" Grid.Row="0">
+                            <TextBlock Text="Выберите один из сегментов IT-индустрии" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
-                            <!-- 3 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Информационные услуги" Tag="Информационные услуги"
-                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                            <UniformGrid Columns="2" Rows="5" Margin="0,8,0,0">
 
-                            <!-- 4 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Кибербезопасность" Tag="Кибербезопасность"
-                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                                <!-- 1 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Разработка программного обеспечения"
+                        Tag="Разработка программного обеспечения"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                            <!-- 5 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Консультационные услуги" Tag="Консультационные услуги"
-                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                                <!-- 2 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Облачные технологии"
+                        Tag="Облачные технологии"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                            <!-- 6 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Аналитика данных" Tag="Аналитика данных"
-                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                                <!-- 3 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Информационные услуги"
+                        Tag="Информационные услуги"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                            <!-- 7 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Аппаратное обеспечение" Tag="Аппаратное обеспечение"
-                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                                <!-- 4 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Кибербезопасность"
+                        Tag="Кибербезопасность"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                            <!-- 8 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Искусственный интеллект" Tag="Искусственный интеллект"
-                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                                <!-- 5 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Консультационные услуги"
+                        Tag="Консультационные услуги"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                            <!-- 9 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Электронная коммерция" Tag="Электронная коммерция"
-                Click="SegmentChoice_Click" Margin="0,8,8,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
+                                <!-- 6 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Аналитика данных"
+                        Tag="Аналитика данных"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                            <!-- 10 -->
-                            <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
-                Content="Телекоммуникации" Tag="Телекоммуникации"
-                Click="SegmentChoice_Click" Margin="8,8,0,0" Padding="16,12">
-                                <ToggleButton.IsChecked>
-                                    <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
-                                        <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
-                                        <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
-                 Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
-                                    </MultiBinding>
-                                </ToggleButton.IsChecked>
-                            </ToggleButton>
-                        </UniformGrid>
+                                <!-- 7 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Аппаратное обеспечение"
+                        Tag="Аппаратное обеспечение"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                        <!-- ВИДИМОСТЬ: только для БАКАЛАВРА -->
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}" Value="{x:Static core:Difficulty.Bachelor}">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}" Value="{x:Static core:Difficulty.Developer}">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                    </StackPanel>
+                                <!-- 8 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Искусственный интеллект"
+                        Tag="Искусственный интеллект"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                    <!-- МАГИСТР/РАЗРАБОТЧИК: свободный ввод -->
-                    <StackPanel x:Name="MasterView">
-                        <TextBlock Text="Название сегмента" FontSize="16" FontWeight="SemiBold"/>
-                        <TextBox Margin="0,8,0,0"
-               Style="{StaticResource WatermarkTextBox}"
-               Tag="Например: Рынок SaaS для SMB"
-               Text="{Binding App.Segment.SegmentName, UpdateSourceTrigger=PropertyChanged}"
-               TextChanged="Segment_TextChanged"/>
-                        <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,8,0,0">
-                            <TextBlock Foreground="#666"
-                   Text="У магистрантов сегмент вводится вручную."/>
-                        </Border>
+                                <!-- 9 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Электронная коммерция"
+                        Tag="Электронная коммерция"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                        <!-- ВИДИМОСТЬ: для МАГИСТРА -->
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding App.Profile.Difficulty}"
-                         Value="{x:Static core:Difficulty.Master}">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                    </StackPanel>
+                                <!-- 10 -->
+                                <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
+                        Content="Телекоммуникации"
+                        Tag="Телекоммуникации"
+                        Click="SegmentChoice_Click" Margin="8,8,8,0" Padding="16,12">
+                                    <ToggleButton.IsChecked>
+                                        <MultiBinding Mode="OneWay" Converter="{StaticResource SegmentSelectedConverter}">
+                                            <Binding RelativeSource="{RelativeSource Self}" Path="Tag" Mode="OneWay"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType={x:Type Window}}"
+                         Path="DataContext.App.Segment.SegmentName" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </ToggleButton.IsChecked>
+                                </ToggleButton>
 
-                </Grid>
+                            </UniformGrid>
+
+                            <!-- Видимость экрана бакалавра: по умолчанию Visible; прячем только у магистра -->
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding App.Profile.Difficulty}"
+                           Value="{x:Static core:Difficulty.Master}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                        </StackPanel>
+
+                        <!-- МАГИСТР: свободный ввод названия сегмента -->
+                        <StackPanel x:Name="MasterView" Grid.Row="1">
+                            <TextBlock Text="Название сегмента" FontSize="16" FontWeight="SemiBold"/>
+                            <TextBox Margin="0,8,0,0"
+                 Style="{StaticResource WatermarkTextBox}"
+                 Tag="Например: Рынок SaaS для SMB"
+                 Text="{Binding App.Segment.SegmentName, UpdateSourceTrigger=PropertyChanged}"
+                 TextChanged="Segment_TextChanged"/>
+                            <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,8,0,0">
+                                <TextBlock Foreground="#666" Text="У магистрантов сегмент вводится вручную."/>
+                            </Border>
+
+                            <!-- Видимость экрана магистра: по умолчанию Collapsed; показываем только у мастера -->
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding App.Profile.Difficulty}"
+                           Value="{x:Static core:Difficulty.Master}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                        </StackPanel>
+
+                    </Grid>
+                </ScrollViewer>
             </TabItem>
 
             <!-- 2. PESTEL -->
@@ -500,79 +527,88 @@
 
             <!-- 3. Факторы/веса -->
             <TabItem Header="3. Факторы и веса" IsEnabled="{Binding CanTab3}">
-                <DockPanel Margin="16">
+                <ScrollViewer x:Name="FactorsSV"
+                Margin="12"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled"
+                CanContentScroll="True">
 
-                    <!-- Панель действий -->
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
-                        <TextBlock VerticalAlignment="Center"
-                        Text="{Binding App.Factors.Sum, StringFormat=Сумма весов: {0:0.00}}"
-                        Foreground="{Binding App.Factors.Sum, Converter={StaticResource SumOkToBrushConverter}}"
-                        Margin="0,0,16,0"/>
-                        <!-- Кнопка добавления (для магистра/разработчика; у бакалавра отключена) -->
-                        <Button Content=" Добавить фактор " Click="FactorAdd_Click">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Setter Property="IsEnabled" Value="True"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="Bachelor">
-                                            <Setter Property="IsEnabled" Value="False"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
-                    </StackPanel>
+                    <!-- Весь прежний контент вкладки внутри одного контейнера -->
+                    <DockPanel Margin="4">
 
-                    <!-- Список факторов -->
-                    <ItemsControl ItemsSource="{Binding App.Factors.Rows}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="0,8,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="160"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+                        <!-- Панель действий -->
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
+                            <TextBlock VerticalAlignment="Center"
+                   Text="{Binding App.Factors.Sum, StringFormat=Сумма весов: {0:0.00}}"
+                   Foreground="{Binding App.Factors.Sum, Converter={StaticResource SumOkToBrushConverter}}"
+                   Margin="0,0,16,0"/>
+                            <!-- Кнопка добавления (для магистра/разработчика; у бакалавра отключена) -->
+                            <Button Content=" Добавить фактор " Click="FactorAdd_Click">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="IsEnabled" Value="True"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="Bachelor">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
 
-                                    <!-- Название фактора (у бакалавра — только чтение) -->
-                                    <TextBox Grid.Column="0"
-                                 Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                 Margin="0,0,8,0">
-                                        <TextBox.Style>
-                                            <Style TargetType="TextBox">
-                                                <Setter Property="IsReadOnly" Value="False"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="Bachelor">
-                                                        <Setter Property="IsReadOnly" Value="True"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBox.Style>
-                                    </TextBox>
+                        <!-- Список факторов -->
+                        <ItemsControl ItemsSource="{Binding App.Factors.Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="160"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
 
-                                    <!-- Вес (0..1). Пустое поле допускается. Нормализация при потере фокуса. -->
-                                    <TextBox Grid.Column="1"
-                                 Text="{Binding WeightText, UpdateSourceTrigger=PropertyChanged}"
-                                 HorizontalContentAlignment="Right"
-                                 PreviewTextInput="FactorWeight_PreviewTextInput"
-                                 LostFocus="FactorWeight_LostFocus"
-                                 Margin="0,0,8,0">
-                                        <TextBox.ToolTip>
-                                            <TextBlock Text="Введите долю от 0 до 1 с запятой: 0,25. Пусто — если ещё не решили." />
-                                        </TextBox.ToolTip>
-                                    </TextBox>
+                                        <!-- Название фактора (у бакалавра — только чтение) -->
+                                        <TextBox Grid.Column="0"
+                       Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                       Margin="0,0,8,0">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="IsReadOnly" Value="False"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.App.Profile.Difficulty, RelativeSource={RelativeSource AncestorType=Window}}" Value="Bachelor">
+                                                            <Setter Property="IsReadOnly" Value="True"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
 
-                                    <!-- Удаление/очистка: бакалавр — очистить вес, магистр/разраб — удалить строку -->
-                                    <Button Grid.Column="2"
-        Content="✕"
-        Width="48"
-        Click="FactorRemove_Click"
-        ToolTip="Бакалавр: обнулить вес · Магистр/Разраб: удалить фактор"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </DockPanel>
+                                        <!-- Вес (0..1). Пустое поле допускается. Нормализация при потере фокуса. -->
+                                        <TextBox Grid.Column="1"
+                       Text="{Binding WeightText, UpdateSourceTrigger=PropertyChanged}"
+                       HorizontalContentAlignment="Right"
+                       PreviewTextInput="FactorWeight_PreviewTextInput"
+                       LostFocus="FactorWeight_LostFocus"
+                       Margin="0,0,8,0">
+                                            <TextBox.ToolTip>
+                                                <TextBlock Text="Введите долю от 0 до 1 с запятой: 0,25. Пусто — если ещё не решили." />
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+
+                                        <!-- Удаление/очистка: бакалавр — обнулить вес, магистр/разраб — удалить строку -->
+                                        <Button Grid.Column="2"
+                      Content="✕"
+                      Width="48"
+                      Click="FactorRemove_Click"
+                      ToolTip="Бакалавр: обнулить вес · Магистр/Разраб: удалить фактор"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                    </DockPanel>
+                </ScrollViewer>
             </TabItem>
 
             <!-- 4. Оценка компаний -->

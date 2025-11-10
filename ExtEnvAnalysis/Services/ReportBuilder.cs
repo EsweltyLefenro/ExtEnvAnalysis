@@ -28,7 +28,7 @@ namespace ExtEnvAnalysis.Services
                     page.Margin(30);
                     page.Size(PageSizes.A4);
                     page.DefaultTextStyle(x => x.FontSize(11));
-                    page.Header().AlignCenter().Text("Анализ внешнего рынка").Bold().FontSize(18);
+                    page.Header().AlignCenter().Text("Анализ внешней среды").Bold().FontSize(18);
 
                     page.Content().Column(col =>
                     {
@@ -210,6 +210,7 @@ namespace ExtEnvAnalysis.Services
                         var maps = app?.Comparisons?.Maps;
                         if (maps != null && maps.Any())
                         {
+                            col.Item().PageBreak();
                             int i = 1;
                             foreach (var map in maps)
                             {

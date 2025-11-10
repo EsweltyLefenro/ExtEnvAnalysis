@@ -10,6 +10,8 @@ namespace ExtEnvAnalysis.Core
     public partial class FactorsState : ObservableObject, ISection
     {
         public ObservableCollection<FactorRow> Rows { get; } = new();
+        public int ActiveCount { get; private set; }
+
 
         [ObservableProperty] private bool isValid;
         [ObservableProperty] private double sum; // сумма 0..1
@@ -101,6 +103,9 @@ namespace ExtEnvAnalysis.Core
             bool countOk = Rows.Count >= ((level == Difficulty.Bachelor || level == Difficulty.Developer) ? 10 : 2);
             bool sumOk = Math.Abs(s - 1.0) <= 0.005;
 
+            ActiveCount = Rows.Count(r => !string.IsNullOrWhiteSpace(r.Name) && r.WeightValue > 0);
+
+            OnPropertyChanged(nameof(ActiveCount));
             IsValid = namesOk && countOk && sumOk && allWeightsValid;
         }
 

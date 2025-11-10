@@ -10,6 +10,7 @@ namespace ExtEnvAnalysis.Core
     public partial class RatingsState : ObservableObject, ISection
     {
         private FactorsState? _factors;
+        private bool _isRecalcRunning;
 
         public ObservableCollection<RatingRow> Rows { get; } = new();
 
@@ -28,9 +29,9 @@ namespace ExtEnvAnalysis.Core
         public void AttachToFactors(FactorsState factors)
         {
             _factors = factors;
-            SyncWithFactors();
+            SyncInternal();
 
-            factors.Rows.CollectionChanged += (_, __) => SyncWithFactors();
+            factors.Rows.CollectionChanged += (_, __) => SyncInternal();
             foreach (var r in factors.Rows) r.PropertyChanged += Factor_PropertyChanged;
         }
 
@@ -47,7 +48,7 @@ namespace ExtEnvAnalysis.Core
             if (e.PropertyName == nameof(FactorRow.Name) ||
                 e.PropertyName == nameof(FactorRow.WeightText))
             {
-                Recalculate();
+                SyncInternal();
             }
         }
 
@@ -60,19 +61,53 @@ namespace ExtEnvAnalysis.Core
             }
         }
 
-        private void SyncWithFactors()
+        public void SyncWithFactors(FactorsState factors)
+        {
+            if (factors is null) return;
+
+            // если RatingsState хранит ссылку на факторы — обнови её
+            _factors = factors; // <- если нет поля, см. шаг 2.3
+
+            // выполнить приватную синхронизацию
+            SyncInternal();
+        }
+
+        private void SyncInternal()
         {
             if (_factors == null) return;
 
-            // Пересобираем список строк под факторы один-в-один (в том же порядке)
+            // кэш уже введённых оценок по ссылке на фактор
+            var cache = Rows.ToDictionary(r => r.Factor, r => r);
+
+            // берём ТОЛЬКО активные факторы: имя есть и вес > 0
+            var active = _factors.Rows
+                .Where(f => !string.IsNullOrWhiteSpace(f.Name) && f.WeightValue > 0)
+                .ToList();
+
             var newRows = new ObservableCollection<RatingRow>();
-            foreach (var f in _factors.Rows)
+
+            foreach (var f in active)
             {
-                var existing = Rows.FirstOrDefault(r => ReferenceEquals(r.Factor, f));
-                var row = existing ?? new RatingRow(f);
+                RatingRow row;
+
+                if (cache.TryGetValue(f, out var old))
+                {
+                    // есть старая строка — сохраняем оценки, обновим ссылку/вес
+                    row = old;
+                }
+                else
+                {
+                    // новая активная строка — пустые оценки
+                    row = new RatingRow(f);
+                }
+
+                // на всякий случай обновим ссылку на фактор (если конструктор не делал)
+                row.Factor = f;
+
                 // подписка на изменения оценок
                 row.PropertyChanged -= Row_PropertyChanged;
                 row.PropertyChanged += Row_PropertyChanged;
+
                 newRows.Add(row);
             }
 
@@ -91,52 +126,70 @@ namespace ExtEnvAnalysis.Core
             if (e.NewItems != null)
                 foreach (RatingRow r in e.NewItems) r.PropertyChanged += Row_PropertyChanged;
         }
-
         public void Recalculate()
         {
-            double sMy = 0, sA = 0, sB = 0, sC = 0;
-            bool ok = true;
-
-            foreach (var row in Rows)
+            if (_isRecalcRunning) return;      // защита от повторного входа
+            _isRecalcRunning = true;
+            try
             {
-                var w = row.Factor.WeightValue;
-                var active = row.IsActive;
+                double sumW = 0.0;
+                double numMy = 0.0, numA = 0.0, numB = 0.0, numC = 0.0;
 
-                if (active)
+                foreach (var r in Rows)
                 {
-                    if (!(TryScore(row.MyText, out int my) &&
-                          TryScore(row.AText, out int a) &&
-                          TryScore(row.BText, out int b) &&
-                          TryScore(row.CText, out int c)))
-                    {
-                        ok = false; // активная строка — все 4 оценки обязательны (1..10)
-                    }
-                    else
-                    {
-                        sMy += my * w;
-                        sA += a * w;
-                        sB += b * w;
-                        sC += c * w;
-                    }
+                    var w = r.Factor?.WeightValue ?? 0.0;
+                    if (w <= 0) continue;
+
+                    sumW += w;
+
+                    int sMy = ParseScore(r.MyText);
+                    int sA = ParseScore(r.AText);
+                    int sB = ParseScore(r.BText);
+                    int sC = ParseScore(r.CText);
+
+                    numMy += w * sMy;
+                    numA += w * sA;
+                    numB += w * sB;
+                    numC += w * sC;
                 }
-                // неактивная строка (вес 0 или пустое имя) не участвует и не требует оценок
+
+                if (sumW > 0)
+                {
+                    TotalMy = numMy / sumW;   // [ObservableProperty] сам поднимет PropertyChanged
+                    TotalA = numA / sumW;
+                    TotalB = numB / sumW;
+                    TotalC = numC / sumW;
+                }
+                else
+                {
+                    TotalMy = TotalA = TotalB = TotalC = 0.0;
+                }
+
+                // валидность для CanTab5
+                // фиксируем набор, чтобы коллекция не "живая" в условиях и не провоцировала повторный пересчёт
+                var active = Rows.Where(r => (r.Factor?.WeightValue ?? 0) > 0).ToList();
+                bool hasActive = active.Count > 0;
+                bool allFilled = active.All(r => IsScore(r.MyText) && IsScore(r.AText)
+                                               && IsScore(r.BText) && IsScore(r.CText));
+                IsValid = hasActive && allFilled;  // [ObservableProperty] сам поднимет PropertyChanged
             }
-
-            TotalMy = Math.Round(sMy, 2, MidpointRounding.AwayFromZero);
-            TotalA = Math.Round(sA, 2, MidpointRounding.AwayFromZero);
-            TotalB = Math.Round(sB, 2, MidpointRounding.AwayFromZero);
-            TotalC = Math.Round(sC, 2, MidpointRounding.AwayFromZero);
-
-            // проверяем «Долю рынка» — обязательные целые 0..100
-            bool marketOk =
-                TryPercent(MarketMyText) &&
-                TryPercent(MarketAText) &&
-                TryPercent(MarketBText) &&
-                TryPercent(MarketCText);
-
-            // Шаг 5 валиден, если заполнены все активные оценки И корректна «Доля рынка»
-            IsValid = ok && marketOk;
+            finally
+            {
+                _isRecalcRunning = false;
+            }
         }
+
+        // утилиты
+        private static int ParseScore(string? s)
+        {
+            if (!int.TryParse(s, out var v)) return 0;
+            if (v < 0) v = 0; if (v > 10) v = 10;
+            return v;
+        }
+
+        private static bool IsScore(string? s) =>
+            int.TryParse(s, out var v) && v >= 0 && v <= 10;
+
 
         // --- алиасы для совместимости с AppState ---
         public void RecalculateTotals() => Recalculate();
