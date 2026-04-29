@@ -20,19 +20,39 @@ namespace ExtEnvAnalysis.Core
         [ObservableProperty] private double totalB;
         [ObservableProperty] private double totalC;
 
-        // Доля рынка (в процентах 0..100, НЕ влияет на IsValid)
+        // Доля рынка (в процентах 0..100). Участвует в IsValid, чтобы карты
+        // и отчет строились только по логически корректным данным.
         [ObservableProperty] private string? marketMyText;
         [ObservableProperty] private string? marketAText;
         [ObservableProperty] private string? marketBText;
         [ObservableProperty] private string? marketCText;
 
+        partial void OnMarketMyTextChanged(string? value) => Recalculate();
+        partial void OnMarketATextChanged(string? value) => Recalculate();
+        partial void OnMarketBTextChanged(string? value) => Recalculate();
+        partial void OnMarketCTextChanged(string? value) => Recalculate();
+
         public void AttachToFactors(FactorsState factors)
         {
-            _factors = factors;
-            SyncInternal();
+            if (ReferenceEquals(_factors, factors))
+            {
+                SyncInternal();
+                return;
+            }
 
-            factors.Rows.CollectionChanged += (_, __) => SyncInternal();
-            foreach (var r in factors.Rows) r.PropertyChanged += Factor_PropertyChanged;
+            if (_factors != null)
+            {
+                _factors.Rows.CollectionChanged -= FactorsRows_CollectionChanged;
+                foreach (var r in _factors.Rows)
+                    r.PropertyChanged -= Factor_PropertyChanged;
+            }
+
+            _factors = factors;
+            _factors.Rows.CollectionChanged += FactorsRows_CollectionChanged;
+            foreach (var r in _factors.Rows)
+                r.PropertyChanged += Factor_PropertyChanged;
+
+            SyncInternal();
         }
 
         public void Reset()
@@ -52,6 +72,17 @@ namespace ExtEnvAnalysis.Core
             }
         }
 
+        private void FactorsRows_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+                foreach (FactorRow r in e.OldItems) r.PropertyChanged -= Factor_PropertyChanged;
+
+            if (e.NewItems != null)
+                foreach (FactorRow r in e.NewItems) r.PropertyChanged += Factor_PropertyChanged;
+
+            SyncInternal();
+        }
+
         private void Row_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName is nameof(RatingRow.MyText) or nameof(RatingRow.AText)
@@ -64,12 +95,7 @@ namespace ExtEnvAnalysis.Core
         public void SyncWithFactors(FactorsState factors)
         {
             if (factors is null) return;
-
-            // если RatingsState хранит ссылку на факторы — обнови её
-            _factors = factors; // <- если нет поля, см. шаг 2.3
-
-            // выполнить приватную синхронизацию
-            SyncInternal();
+            AttachToFactors(factors);
         }
 
         private void SyncInternal()
@@ -169,9 +195,10 @@ namespace ExtEnvAnalysis.Core
                 // фиксируем набор, чтобы коллекция не "живая" в условиях и не провоцировала повторный пересчёт
                 var active = Rows.Where(r => (r.Factor?.WeightValue ?? 0) > 0).ToList();
                 bool hasActive = active.Count > 0;
-                bool allFilled = active.All(r => IsScore(r.MyText) && IsScore(r.AText)
-                                               && IsScore(r.BText) && IsScore(r.CText));
-                IsValid = hasActive && allFilled;  // [ObservableProperty] сам поднимет PropertyChanged
+                bool allScoresValid = active.All(r => IsScore(r.MyText) && IsScore(r.AText)
+                                                    && IsScore(r.BText) && IsScore(r.CText));
+                bool sharesValid = AreMarketSharesValid();
+                IsValid = hasActive && allScoresValid && sharesValid;  // [ObservableProperty] сам поднимет PropertyChanged
             }
             finally
             {
@@ -182,13 +209,11 @@ namespace ExtEnvAnalysis.Core
         // утилиты
         private static int ParseScore(string? s)
         {
-            if (!int.TryParse(s, out var v)) return 0;
-            if (v < 0) v = 0; if (v > 10) v = 10;
-            return v;
+            return TryScore(s, out var v) ? v : 0;
         }
 
         private static bool IsScore(string? s) =>
-            int.TryParse(s, out var v) && v >= 0 && v <= 10;
+            int.TryParse(s, out var v) && v >= 1 && v <= 10;
 
 
         // --- алиасы для совместимости с AppState ---
@@ -200,9 +225,7 @@ namespace ExtEnvAnalysis.Core
             v = 0;
             if (string.IsNullOrWhiteSpace(t)) return false;
             if (!int.TryParse(t.Trim(), out v)) return false;
-            if (v < 1) v = 1;
-            if (v > 10) v = 10;
-            return true;
+            return v >= 1 && v <= 10;
         }
 
         internal static bool TryPercent(string? t)
@@ -210,6 +233,20 @@ namespace ExtEnvAnalysis.Core
             if (string.IsNullOrWhiteSpace(t)) return false;
             if (!int.TryParse(t.Trim(), out var v)) return false;
             return v >= 0 && v <= 100;
+        }
+
+        public bool AreMarketSharesValid()
+        {
+            if (!TryPercent(MarketMyText) ||
+                !TryPercent(MarketAText) ||
+                !TryPercent(MarketBText) ||
+                !TryPercent(MarketCText))
+            {
+                return false;
+            }
+
+            var shares = GetShares01();
+            return shares.Sum() <= 1.0 + 1e-9;
         }
 
         // ===== ДОЛИ РЫНКА ДЛЯ ОТЧЁТА =====

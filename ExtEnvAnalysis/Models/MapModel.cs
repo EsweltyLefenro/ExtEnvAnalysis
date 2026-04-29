@@ -26,9 +26,6 @@ namespace ExtEnvAnalysis.Models
         public CompanyPoint B { get; set; } = new();
         public CompanyPoint C { get; set; } = new();
 
-        private string _explanation = "";
-        public string Explanation { get => _explanation; set { _explanation = value; OnPropertyChanged(); } }
-
         private string _direction = "";
         public string Direction { get => _direction; set { _direction = value; OnPropertyChanged(); } }
 

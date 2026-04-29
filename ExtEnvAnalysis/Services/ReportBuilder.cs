@@ -28,7 +28,7 @@ namespace ExtEnvAnalysis.Services
                     page.Margin(30);
                     page.Size(PageSizes.A4);
                     page.DefaultTextStyle(x => x.FontSize(11));
-                    page.Header().AlignCenter().Text("Анализ внешней среды").Bold().FontSize(18);
+                    page.Header().AlignCenter().Text("Разработка стратегии предприятия").Bold().FontSize(18);
 
                     page.Content().Column(col =>
                     {
@@ -206,7 +206,7 @@ namespace ExtEnvAnalysis.Services
 
                             }));
 
-                        // 6) Квадратные карты + пояснения/направления
+                        // 6) Квадратные карты + направления
                         var maps = app?.Comparisons?.Maps;
                         if (maps != null && maps.Any())
                         {
@@ -217,9 +217,6 @@ namespace ExtEnvAnalysis.Services
                                 col.Item().PaddingTop(10).Text($"Стратегическая карта {i}").Bold().FontSize(14);
                                 var png = RenderMapToPng(map, 800, 800);
                                 if (png != null) col.Item().Height(300).Image(png);
-                                col.Item().PaddingTop(6).Text("Пояснение").Bold();
-                                col.Item().Text(map.Explanation ?? "");
-                                col.Item().PaddingTop(6).Text("");
                                 col.Item().Text("Направление развития").Bold();
                                 col.Item().Text(string.IsNullOrWhiteSpace(map.Direction) ? i.ToString() : map.Direction);
                                 i++;
@@ -378,60 +375,9 @@ namespace ExtEnvAnalysis.Services
             catch { return null; }
         }
 
-        // --- ХЕЛПЕР: вытянуть доли рынка из RatingsState при любых названиях полей/типах
         private static double[] GetShares01FromRatings(RatingsState ratings)
         {
-            // 1) сначала пробуем числовые свойства MarketShareMy/A/B/C (в процентах 0..100)
-            double? getDouble(string name)
-            {
-                var p = ratings.GetType().GetProperty(name);
-                if (p == null) return null;
-                var v = p.GetValue(ratings);
-                if (v is double d) return d;
-                if (v is float f) return (double)f;
-                if (v is int i) return (double)i;
-                if (v is string s && double.TryParse(s.Trim().TrimEnd('%'), out var d2)) return d2;
-                return null;
-            }
-
-            double clamp01(double perc) => Math.Max(0, Math.Min(100, perc)) / 100.0;
-
-            var mMy = getDouble("MarketShareMy");
-            var mA = getDouble("MarketShareA");
-            var mB = getDouble("MarketShareB");
-            var mC = getDouble("MarketShareC");
-
-            if (mMy.HasValue && mA.HasValue && mB.HasValue && mC.HasValue)
-                return new[] { clamp01(mMy.Value), clamp01(mA.Value), clamp01(mB.Value), clamp01(mC.Value) };
-
-            // 2) иначе пробуем текстовые MarketMyText/AText/BText/CText (целые 0..100 без знака %)
-            string? getString(string name)
-            {
-                var p = ratings.GetType().GetProperty(name);
-                return p?.GetValue(ratings) as string;
-            }
-
-            double fromText(string? s)
-            {
-                if (string.IsNullOrWhiteSpace(s)) return 0;
-                var t = s.Trim().TrimEnd('%');
-                if (!int.TryParse(t, out var v)) return 0;
-                if (v < 0) v = 0; if (v > 100) v = 100;
-                return v / 100.0;
-            }
-
-            var tMy = getString("MarketMyText");
-            var tA = getString("MarketAText");
-            var tB = getString("MarketBText");
-            var tC = getString("MarketCText");
-
-            return new[]
-            {
-        fromText(tMy),
-        fromText(tA),
-        fromText(tB),
-        fromText(tC)
-    };
+            return ratings.GetShares01();
         }
 
         // имена компаний из состояния; даём дефолты

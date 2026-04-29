@@ -36,6 +36,10 @@ namespace ExtEnvAnalysis.Core
 
         public void Rebuild(FactorsState factors, RatingsState ratings)
         {
+            factors = factors ?? throw new System.ArgumentNullException(nameof(factors));
+            ratings = ratings ?? throw new System.ArgumentNullException(nameof(ratings));
+            var safeRatings = ratings!;
+
             Maps.Clear();
 
             // Берём только активные строки (вес > 0 и есть имя фактора)
@@ -55,24 +59,24 @@ namespace ExtEnvAnalysis.Core
                 {
                     var rX = rows[i];
                     var rY = rows[j];
+                    var xName = rX.Factor?.Name ?? "";
+                    var yName = rY.Factor?.Name ?? "";
 
                     var map = new MapModel
                     {
                         Index = ++idx,
                         Count = total,
-                        TitleX = rX.Factor.Name,
-                        TitleY = rY.Factor.Name,
+                        TitleX = xName,
+                        TitleY = yName,
 
                         // подписи берём из ratings
-                        Me = new CompanyPoint { Label = ratings.CompanyMyName, X = rX.MyValue, Y = rY.MyValue, Market = mMe, Brush = MeBrush },
-                        A = new CompanyPoint { Label = ratings.CompanyAName, X = rX.AValue, Y = rY.AValue, Market = mA, Brush = ABrush },
-                        B = new CompanyPoint { Label = ratings.CompanyBName, X = rX.BValue, Y = rY.BValue, Market = mB, Brush = BBrush },
-                        C = new CompanyPoint { Label = ratings.CompanyCName, X = rX.CValue, Y = rY.CValue, Market = mC, Brush = CBrush },
+                        Me = new CompanyPoint { Label = safeRatings.CompanyMyName, X = rX.MyValue, Y = rY.MyValue, Market = mMe, Brush = MeBrush },
+                        A = new CompanyPoint { Label = safeRatings.CompanyAName, X = rX.AValue, Y = rY.AValue, Market = mA, Brush = ABrush },
+                        B = new CompanyPoint { Label = safeRatings.CompanyBName, X = rX.BValue, Y = rY.BValue, Market = mB, Brush = BBrush },
+                        C = new CompanyPoint { Label = safeRatings.CompanyCName, X = rX.CValue, Y = rY.CValue, Market = mC, Brush = CBrush },
 
-                        // дубль в массив имён — вдруг позже решишь очищать Label и опираться на Names
-                        Names = new[] { ratings.CompanyMyName, ratings.CompanyAName, ratings.CompanyBName, ratings.CompanyCName },
+                        Names = new[] { safeRatings.CompanyMyName, safeRatings.CompanyAName, safeRatings.CompanyBName, safeRatings.CompanyCName },
 
-                        Explanation = $"X: {rX.Factor.Name}\nY: {rY.Factor.Name}\nПодсказка: отметьте лидеров по осям и зоны роста.",
                         Direction = ""
                     };
 
@@ -80,10 +84,10 @@ namespace ExtEnvAnalysis.Core
 
                     map.Names = new[]
                     {
-                        ratings?.CompanyMyName ?? "Мы",
-                        ratings?.CompanyAName  ?? "A",
-                        ratings?.CompanyBName  ?? "B",
-                        ratings?.CompanyCName  ?? "C"
+                        safeRatings.CompanyMyName,
+                        safeRatings.CompanyAName,
+                        safeRatings.CompanyBName,
+                        safeRatings.CompanyCName
                     };
                 }
         }

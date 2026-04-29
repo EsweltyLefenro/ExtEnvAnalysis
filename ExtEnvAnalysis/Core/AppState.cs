@@ -128,10 +128,12 @@ public partial class AppState : ObservableObject
         RulesChanged?.Invoke();
     }
 
-    // ===== ВСТАВЬ ВМЕСТО ТЕКУЩЕГО В AppState.cs =====
     public List<string> GetBlockingErrorsForReport()
     {
         var err = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(Profile.FullName) || string.IsNullOrWhiteSpace(Profile.Group))
+            err.Add("Профиль: заполните ФИО и группу.");
 
         if (!Segment.IsValid)
             err.Add("Сегмент: выберите сегмент.");
@@ -150,8 +152,10 @@ public partial class AppState : ObservableObject
 
         if (active.Count == 0)
             err.Add("Оценка компаний: нет активных факторов (вес > 0).");
+        else if (active.Count < 3)
+            err.Add("Оценка компаний: выберите не менее 3 активных факторов.");
 
-        // Баллы 0..10 должны парситься — используй твою сигнатуру TryScore(string?, out int)
+        // Баллы 1..10 должны парситься строго, без автоматического исправления.
         foreach (var r in active)
         {
             bool okMy = RatingsState.TryScore(r.MyText, out _);
@@ -160,14 +164,25 @@ public partial class AppState : ObservableObject
             bool okC = RatingsState.TryScore(r.CText, out _);
             if (!(okMy && okA && okB && okC))
             {
-                err.Add($"Оценки: проверьте строку «{r.Factor.Name}» (баллы 0..10).");
+                err.Add($"Оценки: проверьте строку «{r.Factor.Name}» (баллы 1..10).");
                 break;
             }
         }
+
+        if (!Ratings.AreMarketSharesValid())
+            err.Add("Доли рынка: значения должны быть от 0 до 100, а их сумма — не более 100%.");
+
+        if (Comparisons.Maps.Count == 0)
+            err.Add("Карты сравнения: сформируйте стратегические карты.");
+        else if (Comparisons.Maps.Any(m => string.IsNullOrWhiteSpace(m.Direction)))
+            err.Add("Карты сравнения: заполните направление развития для каждой карты.");
+
+        if (string.IsNullOrWhiteSpace(Report.Conclusion))
+            err.Add("Итоги: введите итоговые выводы.");
+
         return err;
     }
 
-    // === ДОБАВЬ в класс AppState ===
     public void ApplyDeveloperPreset()
     {
         // 1) Профиль
@@ -183,34 +198,28 @@ public partial class AppState : ObservableObject
         if (Segment != null && string.IsNullOrWhiteSpace(Segment.SegmentName))
             Segment.SegmentName = "Разработка программного обеспечения";
 
-        //// 3) PESTEL — заполнить пустые ячейки дефисом
-        //try
-        //{
-        //    var cats = Pestel?.Categories;
-        //    if (cats != null)
-        //    {
-        //        foreach (var c in cats)
-        //        {
-        //            if (string.IsNullOrWhiteSpace(c.Field1)) c.Field1 = "-";
-        //            if (string.IsNullOrWhiteSpace(c.Field2)) c.Field2 = "-";
-        //            if (string.IsNullOrWhiteSpace(c.Field3)) c.Field3 = "-";
-        //            if (string.IsNullOrWhiteSpace(c.Field4)) c.Field4 = "-";
-        //            if (string.IsNullOrWhiteSpace(c.Field5)) c.Field5 = "-";
-        //        }
-        //    }
-        //}
-        //catch { /* ok */ }
+        foreach (var c in Pestel.Categories)
+        {
+            if (string.IsNullOrWhiteSpace(c.Field1)) c.Field1 = c.Hints.ElementAtOrDefault(0) ?? "Фактор 1";
+            if (string.IsNullOrWhiteSpace(c.Field2)) c.Field2 = c.Hints.ElementAtOrDefault(1) ?? "Фактор 2";
+            if (string.IsNullOrWhiteSpace(c.Field3)) c.Field3 = c.Hints.ElementAtOrDefault(2) ?? "Фактор 3";
+        }
+        Pestel.Recalculate();
 
-        // 4) Факторы — пресет «Разработчик»
-        try { Factors?.ApplyPresetDeveloper(); } catch { /* ok */ }
+        Factors.ApplyPresetDeveloper();
+        Ratings.ApplyPresetDeveloper();
+        Factors.Recalculate(Profile!.Difficulty);
+        Ratings.Recalculate();
+        Comparisons.Rebuild(Factors, Ratings);
 
-        // 4.1) Оценки — автозаполнение вкладки 4 (только пустые поля)
-        try { Ratings?.ApplyPresetDeveloper(); } catch { /* ok */ }
+        foreach (var map in Comparisons.Maps)
+        {
+            if (string.IsNullOrWhiteSpace(map.Direction))
+                map.Direction = "-";
+        }
 
-        // 5) Синхронизация зависимых разделов
-        try { Factors?.Recalculate(Profile.Difficulty); } catch { /* ok */ }
-        try { Ratings?.Recalculate(); } catch { /* ok */ }
-        try { Comparisons?.Rebuild(Factors, Ratings); } catch { /* ok */ }
+        if (string.IsNullOrWhiteSpace(Report.Conclusion))
+            Report.Conclusion = "По результатам сравнения определены ключевые зоны развития и приоритеты улучшения конкурентной позиции компании.";
     }
 
 }

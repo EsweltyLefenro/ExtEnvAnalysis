@@ -1,14 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using ExtEnvAnalysis.Core;
-using ExtEnvAnalysis.Models;
 using ExtEnvAnalysis.Services;
 using ExtEnvAnalysis.ViewModels;
 using Microsoft.Win32;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -71,12 +68,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void Factor_Delete_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button btn && btn.DataContext is FactorRow row)
-            FactorDeleteOrClear(row);
-    }
-
     private void FactorRemove_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.DataContext is FactorRow row)
@@ -88,10 +79,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.App.ChangeSegment(VM.App.Segment.SegmentName);
         VM.NotifyRulesChanged();
     }
-
-    private void Ta_Changed(object sender, RoutedEventArgs e) => VM.NotifyRulesChanged();
-
-    private void Comparisons_Changed(object sender, RoutedEventArgs e) => VM.NotifyRulesChanged();
 
     private void PestelField_TextChanged(object sender, TextChangedEventArgs e)
     {
@@ -134,22 +121,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.NotifyRulesChanged();
     }
 
-    // Вес меняется: фильтруем ввод и пересчитываем
-    private static readonly Regex weightAllowed = new(@"[^0-9\.,]", RegexOptions.Compiled);
-
     private void SegmentChoice_Click(object sender, RoutedEventArgs e)
     {
         var btn = (ButtonBase)sender; // Button или ToggleButton
-        string name = btn.Tag?.ToString() ?? btn.Content?.ToString();
+        string name = btn.Tag?.ToString() ?? btn.Content?.ToString() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(name)) return;
 
         VM.App.ChangeSegment(name);
         VM.NotifyRulesChanged();
     }
-
-
-    static readonly CultureInfo Ru = new("ru-RU");
-    static readonly Regex Allowed = new(@"^\d*(,\d{0,2})?$"); // цифры + запятая, до 2 знаков после
 
     // === STEP 4: Ввод весов (валидация ввода и нормализация) ===
     private void FactorWeight_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -263,12 +243,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     }
 
-    private void Explanation_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is TextBox tb && tb.DataContext is MapModel m && string.IsNullOrWhiteSpace(tb.Text))
-            tb.Text = $"X: {m.TitleX}\nY: {m.TitleY}";
-    }
-
     private void Direction_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
@@ -292,15 +266,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         vm.App.Factors.Recalculate(vm.App.Profile.Difficulty);
         vm.App.Ratings.Recalculate();
 
-        // Тут типа проверка была бы
-        //var errors = vm.App.GetBlockingErrorsForReport();
-        //if (errors.Count > 0)
-        //{
-        //    MessageBox.Show("Нужно исправить:\n\n• " + string.Join("\n• ", errors),
-        //                    "Проверки перед отчётом",
-        //                    MessageBoxButton.OK, MessageBoxImage.Warning);
-        //    return;
-        //}
+        var errors = vm.App.GetBlockingErrorsForReport();
+        if (errors.Count > 0)
+        {
+            MessageBox.Show("Нужно исправить:\n\n• " + string.Join("\n• ", errors),
+                            "Проверки перед отчётом",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         try
         {
@@ -335,6 +308,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         };
         if (dlg.ShowDialog(this) == true)
         {
+            if (string.IsNullOrWhiteSpace(dlg.FileName)) return;
+
             try { File.Copy(ReportFilePath!, dlg.FileName, overwrite: true); }
             catch (Exception ex)
             { MessageBox.Show(this, $"Не удалось сохранить:\n{ex.Message}"); }
