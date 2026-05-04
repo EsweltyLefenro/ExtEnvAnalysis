@@ -2,6 +2,8 @@
 using ExtEnvAnalysis.Core;
 using System.Collections.ObjectModel;
 
+namespace ExtEnvAnalysis.Services;
+
 public enum CheckSeverity { Info, Warning, Error }
 
 public record CheckItem(CheckSeverity Severity, string Message, string? SectionKey = null)
@@ -14,6 +16,59 @@ public class ValidationService : ObservableObject
     public ObservableCollection<CheckItem> Items { get; } = new();
 
     public bool HasBlocking => Items.Any(i => i.IsBlocking);
+
+    public List<string> GetBlockingErrorsForReport(AppState app)
+    {
+        var err = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(app.Profile.FullName) || string.IsNullOrWhiteSpace(app.Profile.Group))
+            err.Add("Профиль: заполните ФИО и группу.");
+
+        if (!app.Segment.IsValid)
+            err.Add("Сегмент: выберите сегмент.");
+
+        if (!app.Pestel.IsValid)
+            err.Add("PESTEL: в каждой категории должно быть ≥ 3 пункта.");
+
+        if (!app.Factors.IsValid)
+            err.Add($"Факторы: сумма весов должна быть 1.00 (сейчас {app.Factors.Sum:0.00}); названия факторов не должны быть пустыми.");
+
+        var active = app.Ratings.Rows.Where(r =>
+            r?.Factor != null &&
+            !string.IsNullOrWhiteSpace(r.Factor.Name) &&
+            r.Factor.WeightValue > 0).ToList();
+
+        if (active.Count == 0)
+            err.Add("Оценка компаний: нет активных факторов (вес > 0).");
+        else if (active.Count < 3)
+            err.Add("Оценка компаний: выберите не менее 3 активных факторов.");
+
+        foreach (var row in active)
+        {
+            bool okMy = RatingsState.TryScore(row.MyText, out _);
+            bool okA = RatingsState.TryScore(row.AText, out _);
+            bool okB = RatingsState.TryScore(row.BText, out _);
+            bool okC = RatingsState.TryScore(row.CText, out _);
+            if (!(okMy && okA && okB && okC))
+            {
+                err.Add($"Оценки: проверьте строку «{row.Factor.Name}» (баллы 1..10).");
+                break;
+            }
+        }
+
+        if (!app.Ratings.AreMarketSharesValid())
+            err.Add("Доли рынка: значения должны быть от 0 до 100, а их сумма — не более 100%.");
+
+        if (app.Comparisons.Maps.Count == 0)
+            err.Add("Карты сравнения: сформируйте стратегические карты.");
+        else if (app.Comparisons.Maps.Any(map => string.IsNullOrWhiteSpace(map.Direction)))
+            err.Add("Карты сравнения: заполните направление развития для каждой карты.");
+
+        if (string.IsNullOrWhiteSpace(app.Report.Conclusion))
+            err.Add("Итоги: введите итоговые выводы.");
+
+        return err;
+    }
 
     public void Rebuild(AppState app)
     {

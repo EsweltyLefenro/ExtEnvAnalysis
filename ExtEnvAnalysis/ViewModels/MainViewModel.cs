@@ -14,7 +14,7 @@ public partial class MainViewModel : ObservableObject
     public bool CanTab4 => App.IsDeveloper || (App.Segment.IsValid && App.Pestel.IsValid && App.Factors.IsValid && App.Factors.ActiveCount >= 3);    // 4. Факторы/веса
     public bool CanTab5 => App.IsDeveloper || (CanTab4 && App.Ratings.IsValid);
     public bool CanTab6 => App.IsDeveloper || (CanTab5 && App.Comparisons?.Maps != null && App.Comparisons.Maps.All(m => !string.IsNullOrWhiteSpace(m.Direction)));
-    public bool CanTab7 => App.IsDeveloper || !string.IsNullOrWhiteSpace(App?.Report?.Conclusion);
+    public bool CanTab7 => App.IsDeveloper || (CanTab6 && !string.IsNullOrWhiteSpace(App?.Report?.Conclusion));
 
     private int _selectedTabIndex;
 

@@ -1,5 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
+using ExtEnvAnalysis.Services;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -158,42 +158,14 @@ namespace ExtEnvAnalysis.Core
             _isRecalcRunning = true;
             try
             {
-                double sumW = 0.0;
-                double numMy = 0.0, numA = 0.0, numB = 0.0, numC = 0.0;
+                // Фиксируем активные строки, чтобы расчёт и проверка работали с одним набором данных.
+                var active = Rows.Where(r => r.IsActive).ToList();
+                var totals = RatingCalculationService.CalculateCompanyTotals(active);
+                TotalMy = totals.My;
+                TotalA = totals.A;
+                TotalB = totals.B;
+                TotalC = totals.C;
 
-                foreach (var r in Rows)
-                {
-                    var w = r.Factor?.WeightValue ?? 0.0;
-                    if (w <= 0) continue;
-
-                    sumW += w;
-
-                    int sMy = ParseScore(r.MyText);
-                    int sA = ParseScore(r.AText);
-                    int sB = ParseScore(r.BText);
-                    int sC = ParseScore(r.CText);
-
-                    numMy += w * sMy;
-                    numA += w * sA;
-                    numB += w * sB;
-                    numC += w * sC;
-                }
-
-                if (sumW > 0)
-                {
-                    TotalMy = numMy / sumW;   // [ObservableProperty] сам поднимет PropertyChanged
-                    TotalA = numA / sumW;
-                    TotalB = numB / sumW;
-                    TotalC = numC / sumW;
-                }
-                else
-                {
-                    TotalMy = TotalA = TotalB = TotalC = 0.0;
-                }
-
-                // валидность для CanTab5
-                // фиксируем набор, чтобы коллекция не "живая" в условиях и не провоцировала повторный пересчёт
-                var active = Rows.Where(r => (r.Factor?.WeightValue ?? 0) > 0).ToList();
                 bool hasActive = active.Count > 0;
                 bool allScoresValid = active.All(r => IsScore(r.MyText) && IsScore(r.AText)
                                                     && IsScore(r.BText) && IsScore(r.CText));
@@ -204,12 +176,6 @@ namespace ExtEnvAnalysis.Core
             {
                 _isRecalcRunning = false;
             }
-        }
-
-        // утилиты
-        private static int ParseScore(string? s)
-        {
-            return TryScore(s, out var v) ? v : 0;
         }
 
         private static bool IsScore(string? s) =>
@@ -305,34 +271,5 @@ namespace ExtEnvAnalysis.Core
             get => _companyCName;
             set { if (_companyCName != value) { _companyCName = value; OnPropertyChanged(nameof(CompanyCName)); } }
         }
-
-
-        public void ApplyPresetDeveloper()
-        {
-            // 1) Доля рынка — заполняем ТОЛЬКО если пусто
-            if (string.IsNullOrWhiteSpace(MarketMyText)) MarketMyText = "20";
-            if (string.IsNullOrWhiteSpace(MarketAText)) MarketAText = "30";
-            if (string.IsNullOrWhiteSpace(MarketBText)) MarketBText = "25";
-            if (string.IsNullOrWhiteSpace(MarketCText)) MarketCText = "25";
-
-            // 2) Оценки по факторам — для всех незаполненных ячеек ставим случайные целые 1..10
-            var rnd = new Random(Environment.TickCount);
-            string Next() => rnd.Next(1, 11).ToString();
-
-            foreach (var row in Rows)
-            {
-                // Если хочешь только по «активным» факторам — оставь условие:
-                // if (!row.IsActive) continue;
-
-                if (string.IsNullOrWhiteSpace(row.MyText)) row.MyText = Next();
-                if (string.IsNullOrWhiteSpace(row.AText)) row.AText = Next();
-                if (string.IsNullOrWhiteSpace(row.BText)) row.BText = Next();
-                if (string.IsNullOrWhiteSpace(row.CText)) row.CText = Next();
-            }
-
-            // 3) Пересчитать итоги валидности/сумм
-            Recalculate();
-        }
-
     }
 }

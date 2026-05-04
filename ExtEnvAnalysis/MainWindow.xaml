@@ -9,7 +9,7 @@
         xmlns:conv="clr-namespace:ExtEnvAnalysis.Converters"
         xmlns:ctrls="clr-namespace:ExtEnvAnalysis.Controls"
         xmlns:vm="clr-namespace:ExtEnvAnalysis.ViewModels"
-        Title="Анализ внешней среды" Width="1600" Height="900"
+        Title="Анализ внешней среды" Width="1920" Height="1080"
         WindowStartupLocation="CenterScreen"
         FontSize="28">
     <Window.Resources>
@@ -217,7 +217,7 @@
 
                 <!-- ФИО -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,12,0">
-                    <TextBlock Text="ФИО"/>
+                    <TextBlock Text="Фамилия и имя"/>
                     <TextBox Margin="0,4,0,0"
                Text="{Binding App.Profile.FullName, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
@@ -250,7 +250,7 @@
         <!-- Табы -->
         <TabControl x:Name="MainTabs" Grid.Row="2" Margin="16" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
             <!-- 1. Сегмент -->
-            <TabItem Header="1. Сегмент" IsEnabled="{Binding CanTab1}">
+            <TabItem Header=" 1. Сегмент " IsEnabled="{Binding CanTab1}">
                 <ScrollViewer x:Name="SegmentSV"
                 Margin="12"
                 VerticalScrollBarVisibility="Auto"
@@ -457,7 +457,7 @@
             </TabItem>
 
             <!-- 2. PESTEL -->
-            <TabItem Header="2. PESTEL" IsEnabled="{Binding CanTab2}">
+            <TabItem Header=" 2. PESTEL " IsEnabled="{Binding CanTab2}">
                 <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding App.Pestel.Categories}">
                         <ItemsControl.ItemsPanel>
@@ -472,7 +472,7 @@
                         </ItemsControl.ItemContainerStyle>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="12" BorderBrush="#DDD" BorderThickness="1" CornerRadius="8" Width="360">
+                                <Border Padding="12" BorderBrush="#DDD" BorderThickness="1" CornerRadius="8" Width="580">
                                     <StackPanel>
                                         <!-- Заголовок и счетчик -->
                                         <DockPanel>
@@ -490,30 +490,35 @@
                                         <TextBox Margin="0,8,0,0"
                                                  Style="{StaticResource WatermarkTextBox}"
                                                  Tag="{Binding Hints[0]}"
+                                                 MaxLength="35"
                                                  Text="{Binding Field1, UpdateSourceTrigger=PropertyChanged}"
                                                  TextChanged="PestelField_TextChanged"/>
 
                                         <TextBox Margin="0,6,0,0"
                                                  Style="{StaticResource WatermarkTextBox}"
                                                  Tag="{Binding Hints[1]}"
+                                                 MaxLength="35"
                                                  Text="{Binding Field2, UpdateSourceTrigger=PropertyChanged}"
                                                  TextChanged="PestelField_TextChanged"/>
 
                                         <TextBox Margin="0,6,0,0"
                                                  Style="{StaticResource WatermarkTextBox}"
                                                  Tag="{Binding Hints[2]}"
+                                                 MaxLength="35"
                                                  Text="{Binding Field3, UpdateSourceTrigger=PropertyChanged}"
                                                  TextChanged="PestelField_TextChanged"/>
 
                                         <TextBox Margin="0,6,0,0"
                                                  Style="{StaticResource WatermarkTextBox}"
                                                  Tag="{Binding Hints[3]}"
+                                                 MaxLength="35"
                                                  Text="{Binding Field4, UpdateSourceTrigger=PropertyChanged}"
                                                  TextChanged="PestelField_TextChanged"/>
 
                                         <TextBox Margin="0,6,0,0"
                                                  Style="{StaticResource WatermarkTextBox}"
                                                  Tag="{Binding Hints[4]}"
+                                                 MaxLength="35"
                                                  Text="{Binding Field5, UpdateSourceTrigger=PropertyChanged}"
                                                  TextChanged="PestelField_TextChanged"/>
                                     </StackPanel>
@@ -525,7 +530,7 @@
             </TabItem>
 
             <!-- 3. Факторы/веса -->
-            <TabItem Header="3. Факторы и веса" IsEnabled="{Binding CanTab3}">
+            <TabItem Header=" 3. Факторы и веса " IsEnabled="{Binding CanTab3}">
                 <ScrollViewer x:Name="FactorsSV"
                 Margin="12"
                 VerticalScrollBarVisibility="Auto"
@@ -611,7 +616,7 @@
             </TabItem>
 
             <!-- 4. Оценка компаний -->
-            <TabItem Header="4. Оценка компаний" IsEnabled="{Binding CanTab4}">
+            <TabItem Header=" 4. Оценка компаний " IsEnabled="{Binding CanTab4}">
                 <ScrollViewer x:Name="RatingsSV"
                 Margin="12"
                 VerticalScrollBarVisibility="Auto"
@@ -799,7 +804,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="5. Карты сравнения" IsEnabled="{Binding CanTab5}">
+            <TabItem Header=" 5. Карты сравнения " IsEnabled="{Binding CanTab5}">
                 <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding App.Comparisons.Maps}">
                         <ItemsControl.ItemTemplate>
@@ -833,13 +838,13 @@
                                             </TextBlock.Text>
                                         </TextBlock>
 
-                                        <!-- ЛЕВАЯ ЧАСТЬ: поле (квадрат 680×680), не влияет на ширину правой колонки -->
+                                        <!-- ЛЕВАЯ ЧАСТЬ: поле (квадрат 600×600), не влияет на ширину правой колонки -->
                                         <Border Grid.Row="1" Grid.Column="0"
                       Margin="8,0,16,0"
                       HorizontalAlignment="Left"
                       ClipToBounds="True">
                                             <ctrls:StrategyMap x:Name="MapView"
-                                   Height="680"
+                                   Height="600"
                                    Width="{Binding ElementName=MapView, Path=Height}"
                                    HorizontalAlignment="Left"
                                    Map="{Binding}"/>
@@ -880,7 +885,7 @@
             </TabItem>
 
             <!-- 6. Итоги -->
-            <TabItem Header="6. Итоги" IsEnabled="{Binding CanTab6}">
+            <TabItem Header=" 6. Итоги " IsEnabled="{Binding CanTab6}">
                 <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
@@ -941,7 +946,7 @@
             </TabItem>
 
             <!-- 7. Отчёт -->
-            <TabItem Header="7. Отчёт" IsEnabled="{Binding CanTab7}">
+            <TabItem Header=" 7. Отчёт " IsEnabled="{Binding CanTab7}">
                 <Grid Margin="16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

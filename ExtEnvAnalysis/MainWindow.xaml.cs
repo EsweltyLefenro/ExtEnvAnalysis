@@ -77,6 +77,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void Segment_TextChanged(object sender, TextChangedEventArgs e)
     {
         VM.App.ChangeSegment(VM.App.Segment.SegmentName);
+        ClearReportFile();
         VM.NotifyRulesChanged();
     }
 
@@ -113,6 +114,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.App.Profile.FullName = fullName;
         VM.App.Profile.Group = group;
         VM.App.Profile.Difficulty = newLevel;
+        ClearReportFile();
 
         if (newLevel == Difficulty.Developer)
             VM.App.ApplyDeveloperPreset();   // сразу предзаполнить
@@ -126,8 +128,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var btn = (ButtonBase)sender; // Button или ToggleButton
         string name = btn.Tag?.ToString() ?? btn.Content?.ToString() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(name)) return;
+        if (string.Equals(VM.App.Segment.SegmentName, name, StringComparison.Ordinal)) return;
 
         VM.App.ChangeSegment(name);
+        ClearReportFile();
         VM.NotifyRulesChanged();
     }
 
@@ -257,6 +261,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         Raise(nameof(ReportFilePath));
         Raise(nameof(ReportHasFile));
+    }
+
+    private void ClearReportFile()
+    {
+        ReportFilePath = null;
+        UpdateReportBindings();
     }
 
     private void Report_Build_Click(object sender, RoutedEventArgs e)

@@ -156,14 +156,7 @@ namespace ExtEnvAnalysis.Services
                                 });
                                 // === Мини-сводка по компаниям: Доля рынка + Взвеш. рейтинг ===
                                 {
-                                    double sumW = active.Sum(x => x.Factor.WeightValue);
-                                    double Score(Func<Core.RatingRow, int> sel) => active.Sum(x => x.Factor.WeightValue * sel(x));
-                                    double N(double s) => sumW > 0 ? s / sumW : 0.0;
-
-                                    double my = N(Score(x => x.MyValue));
-                                    double a = N(Score(x => x.AValue));
-                                    double b = N(Score(x => x.BValue));
-                                    double c0 = N(Score(x => x.CValue));
+                                    var totals = RatingCalculationService.CalculateCompanyTotals(active);
 
                                     var shares = app?.Ratings != null ? GetShares01FromRatings(app.Ratings) : new double[] { 0, 0, 0, 0 };
                                     double shMy = shares.ElementAtOrDefault(0);
@@ -197,10 +190,10 @@ namespace ExtEnvAnalysis.Services
 
                                         var (nMy2, nA2, nB2, nC2) = CompanyNames(app?.Ratings);
 
-                                        Row(nMy2, shMy, my);
-                                        Row(nA2, shA, a);
-                                        Row(nB2, shB, b);
-                                        Row(nC2, shC, c0);
+                                        Row(nMy2, shMy, totals.My);
+                                        Row(nA2, shA, totals.A);
+                                        Row(nB2, shB, totals.B);
+                                        Row(nC2, shC, totals.C);
                                     });
                                 }
 
@@ -247,14 +240,7 @@ namespace ExtEnvAnalysis.Services
                                                         && row.Factor.WeightValue > 0).ToList();
                                 if (active.Count == 0) { c.Item().Text("—"); return; }
 
-                                double sumW = active.Sum(x => x.Factor.WeightValue);
-                                double Score(Func<Core.RatingRow, int> sel) => active.Sum(x => x.Factor.WeightValue * sel(x));
-                                double N(double s) => sumW > 0 ? s / sumW : 0.0;
-
-                                double my = N(Score(x => x.MyValue));
-                                double a = N(Score(x => x.AValue));
-                                double b = N(Score(x => x.BValue));
-                                double c0 = N(Score(x => x.CValue));
+                                var totals = RatingCalculationService.CalculateCompanyTotals(active);
 
                                 // доли рынка (0..1) из RatingsState
                                 var shares = app?.Ratings != null ? GetShares01FromRatings(app.Ratings) : new double[] { 0, 0, 0, 0 };
@@ -287,10 +273,10 @@ namespace ExtEnvAnalysis.Services
 
                                     var (nMy3, nA3, nB3, nC3) = CompanyNames(app?.Ratings);
 
-                                    Row(nMy3, shMy, my);
-                                    Row(nA3, shA, a);
-                                    Row(nB3, shB, b);
-                                    Row(nC3, shC, c0);
+                                    Row(nMy3, shMy, totals.My);
+                                    Row(nA3, shA, totals.A);
+                                    Row(nB3, shB, totals.B);
+                                    Row(nC3, shC, totals.C);
                                 });
 
                                 // Имена компаний из состояния (с дефолтами)
@@ -301,10 +287,10 @@ namespace ExtEnvAnalysis.Services
 
                                 var best = new[]
                                 {
-                                    (nMy3, my),
-                                    (nA3,  a),
-                                    (nB3,  b),
-                                    (nC3,  c0)
+                                    (nMy3, totals.My),
+                                    (nA3,  totals.A),
+                                    (nB3,  totals.B),
+                                    (nC3,  totals.C)
                                 }.OrderByDescending(x => x.Item2).ToList();
 
                                 var top = best.First();
