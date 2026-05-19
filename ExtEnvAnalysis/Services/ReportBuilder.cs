@@ -37,7 +37,7 @@ namespace ExtEnvAnalysis.Services
                             e.Column(c =>
                             {
                                 c.Item().Text(t => t.Span("Профиль").Bold().FontSize(14));
-                                c.Item().Text($"ФИО: {app?.Profile?.FullName ?? ""}");
+                                c.Item().Text($"Фамилия и имя: {app?.Profile?.FullName ?? ""}");
                                 c.Item().Text($"Группа: {app?.Profile?.Group ?? ""}");
                                 c.Item().Text($"Уровень: {LocalizeDifficulty(app?.Profile?.Difficulty ?? Difficulty.Bachelor)}");
                             }));

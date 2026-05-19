@@ -97,16 +97,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Предупреждение: откат всего, кроме ФИО и группы
         var res = MessageBox.Show(
-            "Сменить уровень? Все введённые данные (кроме ФИО и группы) будут удалены.",
+            "Сменить уровень? Все введённые данные (кроме полей «Фамилия и имя» и «Группа») будут удалены.",
             "Подтвердите смену уровня",
             MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
         if (res != MessageBoxResult.Yes) return;
 
-        // (Здесь позже легко вставить проверку пароля)
-        // if (!CheckPasswordFor(newLevel)) return;
-
-        // Сохраняем ФИО/Группу, сбрасываем всё остальное и применяем новый уровень
+        // Сохраняем ФИ/Группу, сбрасываем всё остальное и применяем новый уровень
         var fullName = VM.App.Profile.FullName;
         var group = VM.App.Profile.Group;
 

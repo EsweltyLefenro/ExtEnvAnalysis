@@ -22,7 +22,7 @@ public class ValidationService : ObservableObject
         var err = new List<string>();
 
         if (string.IsNullOrWhiteSpace(app.Profile.FullName) || string.IsNullOrWhiteSpace(app.Profile.Group))
-            err.Add("Профиль: заполните ФИО и группу.");
+            err.Add("Профиль: заполните фамилию, имя и группу.");
 
         if (!app.Segment.IsValid)
             err.Add("Сегмент: выберите сегмент.");
@@ -75,7 +75,7 @@ public class ValidationService : ObservableObject
         Items.Clear();
 
         if (string.IsNullOrWhiteSpace(app.Profile.FullName) || string.IsNullOrWhiteSpace(app.Profile.Group))
-            Items.Add(new CheckItem(CheckSeverity.Error, "Профиль: заполните ФИО и группу", "PROFILE"));
+            Items.Add(new CheckItem(CheckSeverity.Error, "Профиль: заполните фамилию, имя и группу", "PROFILE"));
 
         if (!app.Segment.IsValid)
             Items.Add(new CheckItem(CheckSeverity.Error, "Сегмент: выберите сегмент", "SEGMENT"));
