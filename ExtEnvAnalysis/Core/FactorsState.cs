@@ -12,9 +12,8 @@ namespace ExtEnvAnalysis.Core
         public ObservableCollection<FactorRow> Rows { get; } = new();
         public int ActiveCount { get; private set; }
 
-
         [ObservableProperty] private bool isValid;
-        [ObservableProperty] private double sum; // сумма 0..1
+        [ObservableProperty] private double sum;
         private Difficulty _lastLevel = Difficulty.Bachelor;
 
         public FactorsState()
@@ -46,7 +45,7 @@ namespace ExtEnvAnalysis.Core
                 {
                     Index = i,
                     Name = names[i],
-                    WeightText = "" // изначально пусто
+                    WeightText = ""
                 });
             }
 
@@ -82,7 +81,7 @@ namespace ExtEnvAnalysis.Core
 
         public void Recalculate(Difficulty level)
         {
-            _lastLevel = level;   // запомним, чтобы внутренние вызовы не слетали в Master
+            _lastLevel = level;
             AttachRowHandlers();
 
             double s = 0;
@@ -156,8 +155,7 @@ namespace ExtEnvAnalysis.Core
                     Name = name
                 };
 
-                // ВЕС ТОЛЬКО ЧЕРЕЗ ТЕКСТ, чтобы модель сама посчитала WeightValue
-                try { row.WeightText = w.ToString("0.00"); } catch { /* ok */ }
+                try { row.WeightText = w.ToString("0.00"); } catch {  }
 
                 Rows.Add(row);
             }

@@ -3,17 +3,17 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:core="clr-namespace:ExtEnvAnalysis.Core">
 
-	<!-- Стиль кнопок выбора уровня -->
 	<Style x:Key="DifficultyButtonStyle" TargetType="Button">
 		<Setter Property="Margin" Value="0,0,8,0"/>
 		<Setter Property="Padding" Value="12,8"/>
 		<Setter Property="MinWidth" Value="120"/>
-		<Setter Property="Background" Value="#EEEEEE"/>
-		<Setter Property="BorderBrush" Value="#C8C8C8"/>
+		<Setter Property="Background" Value="#E8EEF7"/>
+		<Setter Property="Foreground" Value="#1F3B73"/>
+		<Setter Property="BorderBrush" Value="#B7C8DD"/>
 		<Setter Property="BorderThickness" Value="1"/>
 
 		<Style.Triggers>
-			<!-- Bachelor -->
+			
 			<MultiDataTrigger>
 				<MultiDataTrigger.Conditions>
 					<Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Bachelor"/>
@@ -21,12 +21,11 @@
                                        RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
 							   Value="{x:Static core:Difficulty.Bachelor}"/>
 				</MultiDataTrigger.Conditions>
-				<Setter Property="Background" Value="#3F51B5"/>
+				<Setter Property="Background" Value="#1F3B73"/>
 				<Setter Property="Foreground" Value="White"/>
-				<Setter Property="BorderBrush" Value="#3F51B5"/>
+				<Setter Property="BorderBrush" Value="#1F3B73"/>
 			</MultiDataTrigger>
 
-			<!-- Master -->
 			<MultiDataTrigger>
 				<MultiDataTrigger.Conditions>
 					<Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Master"/>
@@ -34,12 +33,11 @@
                                        RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
 							   Value="{x:Static core:Difficulty.Master}"/>
 				</MultiDataTrigger.Conditions>
-				<Setter Property="Background" Value="#3F51B5"/>
+				<Setter Property="Background" Value="#1F3B73"/>
 				<Setter Property="Foreground" Value="White"/>
-				<Setter Property="BorderBrush" Value="#3F51B5"/>
+				<Setter Property="BorderBrush" Value="#1F3B73"/>
 			</MultiDataTrigger>
 
-			<!-- Developer -->
 			<MultiDataTrigger>
 				<MultiDataTrigger.Conditions>
 					<Condition Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Developer"/>
@@ -47,9 +45,9 @@
                                        RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
 							   Value="{x:Static core:Difficulty.Developer}"/>
 				</MultiDataTrigger.Conditions>
-				<Setter Property="Background" Value="#3F51B5"/>
+				<Setter Property="Background" Value="#1F3B73"/>
 				<Setter Property="Foreground" Value="White"/>
-				<Setter Property="BorderBrush" Value="#3F51B5"/>
+				<Setter Property="BorderBrush" Value="#1F3B73"/>
 			</MultiDataTrigger>
 		</Style.Triggers>
 	</Style>

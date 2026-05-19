@@ -5,7 +5,6 @@ namespace ExtEnvAnalysis.Core
 {
     public static class PestelSeeds
     {
-        // по 5 подсказок на тип
         public static readonly Dictionary<PestelType, string[]> Map = new()
         {
             [PestelType.P] = new[] { "Налоги", "Госрегулирование", "Лицензии", "Политстабильность", "Госзакупки" },

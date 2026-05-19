@@ -7,9 +7,9 @@ namespace ExtEnvAnalysis.Models
     public sealed class CompanyPoint
     {
         public string Label { get; set; } = "";
-        public double X { get; set; }      // 1..10
-        public double Y { get; set; }      // 1..10
-        public double Market { get; set; } // 0..100
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Market { get; set; }
         public Brush Brush { get; set; } = Brushes.Gray;
     }
 

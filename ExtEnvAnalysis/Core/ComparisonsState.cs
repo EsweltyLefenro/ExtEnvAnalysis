@@ -21,16 +21,15 @@ namespace ExtEnvAnalysis.Core
             return double.TryParse(s.Replace('.', ','), NumberStyles.Float, ru, out var v) ? v : 0;
         }
 
-        // Единые цвета для точек на карте
-        private static readonly SolidColorBrush MeBrush = CreateBrush(Color.FromRgb(33, 150, 243));   // синий
-        private static readonly SolidColorBrush ABrush = CreateBrush(Color.FromRgb(255, 152, 0));    // оранжевый
-        private static readonly SolidColorBrush BBrush = CreateBrush(Color.FromRgb(120, 144, 156));  // серый
-        private static readonly SolidColorBrush CBrush = CreateBrush(Color.FromRgb(156, 39, 176));   // фиолетовый
+        private static readonly SolidColorBrush MeBrush = CreateBrush(Color.FromRgb(33, 150, 243));
+        private static readonly SolidColorBrush ABrush = CreateBrush(Color.FromRgb(255, 152, 0));
+        private static readonly SolidColorBrush BBrush = CreateBrush(Color.FromRgb(120, 144, 156));
+        private static readonly SolidColorBrush CBrush = CreateBrush(Color.FromRgb(156, 39, 176));
 
         private static SolidColorBrush CreateBrush(Color c)
         {
             var b = new SolidColorBrush(c);
-            b.Freeze(); // чтобы не плодить изменяемые объекты
+            b.Freeze();
             return b;
         }
 
@@ -42,11 +41,9 @@ namespace ExtEnvAnalysis.Core
 
             Maps.Clear();
 
-            // Берём только активные строки (вес > 0 и есть имя фактора)
             var rows = ratings.Rows.Where(r => r.IsActive).ToList();
             if (rows.Count < 2) return;
 
-            // Доли рынка (0..100) — влияют на размер пузыря
             double mMe = ParsePercent(ratings.MarketMyText);
             double mA = ParsePercent(ratings.MarketAText);
             double mB = ParsePercent(ratings.MarketBText);
@@ -69,7 +66,6 @@ namespace ExtEnvAnalysis.Core
                         TitleX = xName,
                         TitleY = yName,
 
-                        // подписи берём из ratings
                         Me = new CompanyPoint { Label = safeRatings.CompanyMyName, X = rX.MyValue, Y = rY.MyValue, Market = mMe, Brush = MeBrush },
                         A = new CompanyPoint { Label = safeRatings.CompanyAName, X = rX.AValue, Y = rY.AValue, Market = mA, Brush = ABrush },
                         B = new CompanyPoint { Label = safeRatings.CompanyBName, X = rX.BValue, Y = rY.BValue, Market = mB, Brush = BBrush },
