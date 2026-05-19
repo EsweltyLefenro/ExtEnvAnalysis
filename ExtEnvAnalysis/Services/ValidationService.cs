@@ -80,7 +80,6 @@ public class ValidationService : ObservableObject
         if (!app.Segment.IsValid)
             Items.Add(new CheckItem(CheckSeverity.Error, "Сегмент: выберите сегмент", "SEGMENT"));
 
-        // PESTEL: в каждой букве >= 3 пункта
         foreach (var type in new[] { PestelType.P, PestelType.E, PestelType.S, PestelType.T, PestelType.Env, PestelType.L })
         {
             var cnt = app.Pestel?.Categories.FirstOrDefault(c => c.Type == type)?
@@ -88,7 +87,6 @@ public class ValidationService : ObservableObject
             if (cnt < 3) Items.Add(new CheckItem(CheckSeverity.Error, $"PESTEL: раздел {type} должен содержать минимум 3 пункта", "PESTEL"));
         }
 
-        // Факторы: имена и сумма весов
         var activeFactors = app.Factors.Rows
             .Where(r => !string.IsNullOrWhiteSpace(r.Name) && r.WeightValue > 0)
             .ToList();
@@ -98,7 +96,6 @@ public class ValidationService : ObservableObject
         if (Math.Abs(app.Factors.Sum - 1.0) > 1e-6)
             Items.Add(new CheckItem(CheckSeverity.Error, $"Сумма весов = {app.Factors.Sum:0.00}, должна быть 1.00", "FACTORS"));
 
-        // Оценки: по активным факторам должны быть баллы 1..10.
         var ratingActive = app.Ratings.Rows.Where(r => r?.Factor != null && r.Factor.WeightValue > 0).ToList();
         if (ratingActive.Count == 0)
             Items.Add(new CheckItem(CheckSeverity.Error, "Нет активных факторов для оценок", "RATINGS"));
@@ -124,7 +121,6 @@ public class ValidationService : ObservableObject
     }
 }
 
-// маленький хелпер
 static class _Ext
 {
     public static TOut Let<TIn, TOut>(this TIn? v, Func<TIn, TOut> f) where TIn : class

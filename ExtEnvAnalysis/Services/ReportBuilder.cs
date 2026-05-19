@@ -32,7 +32,6 @@ namespace ExtEnvAnalysis.Services
 
                     page.Content().Column(col =>
                     {
-                        // 1) Профиль
                         col.Item().PaddingBottom(10).Element(e =>
                             e.Column(c =>
                             {
@@ -42,7 +41,6 @@ namespace ExtEnvAnalysis.Services
                                 c.Item().Text($"Уровень: {LocalizeDifficulty(app?.Profile?.Difficulty ?? Difficulty.Bachelor)}");
                             }));
 
-                        // 2) Сегмент
                         col.Item().PaddingBottom(10).Element(e =>
                             e.Column(c =>
                             {
@@ -51,7 +49,6 @@ namespace ExtEnvAnalysis.Services
                                 c.Item().Text(string.IsNullOrWhiteSpace(seg) ? "—" : seg);
                             }));
 
-                        // 3) PESTEL
                         col.Item().PaddingBottom(10).Element(e =>
                             e.Column(c =>
                             {
@@ -64,10 +61,8 @@ namespace ExtEnvAnalysis.Services
                                 PrintPestelList(c, "L — Правовые", app?.Pestel, PestelType.L);
                             }));
 
-                        // --- новая страница перед "Факторы и веса"
                         col.Item().PageBreak();
 
-                        // 4) Факторы и веса
                         col.Item().PaddingBottom(10).Element(e =>
                             e.Column(c =>
                             {
@@ -110,7 +105,6 @@ namespace ExtEnvAnalysis.Services
                                 }
                             }));
 
-                        // 5) Оценка компаний
                         col.Item().PaddingBottom(10).Element(e =>
                             e.Column(c =>
                             {
@@ -154,7 +148,6 @@ namespace ExtEnvAnalysis.Services
                                         t.Cell().AlignCenter().Text(F(row.CValue));
                                     }
                                 });
-                                // === Мини-сводка по компаниям: Доля рынка + Взвеш. рейтинг ===
                                 {
                                     var totals = RatingCalculationService.CalculateCompanyTotals(active);
 
@@ -170,9 +163,9 @@ namespace ExtEnvAnalysis.Services
                                     {
                                         t.ColumnsDefinition(cd =>
                                         {
-                                            cd.RelativeColumn(2.0f);  // Компания
-                                            cd.RelativeColumn(1.2f);  // Доля
-                                            cd.RelativeColumn(1.6f);  // Рейтинг
+                                            cd.RelativeColumn(2.0f);
+                                            cd.RelativeColumn(1.2f);
+                                            cd.RelativeColumn(1.6f);
                                         });
                                         t.Header(h =>
                                         {
@@ -199,7 +192,6 @@ namespace ExtEnvAnalysis.Services
 
                             }));
 
-                        // 6) Квадратные карты + направления
                         var maps = app?.Comparisons?.Maps;
                         if (maps != null && maps.Any())
                         {
@@ -217,13 +209,11 @@ namespace ExtEnvAnalysis.Services
                             }
                         }
 
-                        // 7) Итоги: Доля рынка + Взвешенный рейтинг
                         col.Item().PaddingTop(10).Element(e =>
                             e.Column(c =>
                             {
                                 c.Item().Text(t => t.Span("Итоги по компаниям").Bold().FontSize(14));
 
-                                // === Текстовые Итоги из вкладки 6 ===
                                 var conclusion = app?.Report?.Conclusion;
                                 if (!string.IsNullOrWhiteSpace(conclusion))
                                 {
@@ -242,7 +232,6 @@ namespace ExtEnvAnalysis.Services
 
                                 var totals = RatingCalculationService.CalculateCompanyTotals(active);
 
-                                // доли рынка (0..1) из RatingsState
                                 var shares = app?.Ratings != null ? GetShares01FromRatings(app.Ratings) : new double[] { 0, 0, 0, 0 };
                                 double shMy = shares.ElementAtOrDefault(0);
                                 double shA = shares.ElementAtOrDefault(1);
@@ -253,9 +242,9 @@ namespace ExtEnvAnalysis.Services
                                 {
                                     t.ColumnsDefinition(cd =>
                                     {
-                                        cd.RelativeColumn(2.0f); // Компания
-                                        cd.RelativeColumn(1.2f); // Доля рынка
-                                        cd.RelativeColumn(1.4f); // Взвешенный рейтинг
+                                        cd.RelativeColumn(2.0f);
+                                        cd.RelativeColumn(1.2f);
+                                        cd.RelativeColumn(1.4f);
                                     });
                                     t.Header(h =>
                                     {
@@ -279,7 +268,6 @@ namespace ExtEnvAnalysis.Services
                                     Row(nC3, shC, totals.C);
                                 });
 
-                                // Имена компаний из состояния (с дефолтами)
                                 var nMy3 = app?.Ratings?.CompanyMyName ?? "Мы";
                                 var nA3 = app?.Ratings?.CompanyAName ?? "A";
                                 var nB3 = app?.Ratings?.CompanyBName ?? "B";
@@ -366,7 +354,6 @@ namespace ExtEnvAnalysis.Services
             return ratings.GetShares01();
         }
 
-        // имена компаний из состояния; даём дефолты
         private static (string nMy, string nA, string nB, string nC) CompanyNames(ExtEnvAnalysis.Core.RatingsState? r)
         {
             return (r?.CompanyMyName ?? "Мы",

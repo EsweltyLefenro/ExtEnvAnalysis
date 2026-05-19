@@ -10,11 +10,9 @@ public partial class ProfileState : ObservableObject, ISection
 
     public bool IsDeveloper => Difficulty == Difficulty.Developer;
 
-    // Профиль всегда «валиден» (ФИО/группа валидируются отдельно в UI при надобности)
     public bool IsValid => true;
 
     public void Reset()
     {
-        // Профиль очищать не надо по нашим правилам.
     }
 }

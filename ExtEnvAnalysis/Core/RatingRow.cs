@@ -3,11 +3,6 @@ using System.ComponentModel;
 
 namespace ExtEnvAnalysis.Core
 {
-    /// <summary>
-    /// Строка оценок для одного фактора.
-    /// Привязана к FactorRow (чтобы имя/вес были «живыми»).
-    /// Тексты оценок допускают пустые строки.
-    /// </summary>
     public partial class RatingRow : ObservableObject
     {
         public RatingRow(FactorRow factor)
@@ -18,7 +13,6 @@ namespace ExtEnvAnalysis.Core
 
         [ObservableProperty] private FactorRow factor;
 
-        // Тексты 4 колонок оценок (Вы / A / B / C)
         [ObservableProperty] private string? myText;
         [ObservableProperty] private string? aText;
         [ObservableProperty] private string? bText;

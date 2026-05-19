@@ -11,9 +11,9 @@
         xmlns:vm="clr-namespace:ExtEnvAnalysis.ViewModels"
         Title="Анализ внешней среды" Width="1920" Height="1080"
         WindowStartupLocation="CenterScreen"
-        FontSize="28">
+        FontSize="28" Background="{StaticResource UniSurfaceBrush}">
     <Window.Resources>
-        <!-- СНАЧАЛА прокси и конвертер -->
+        
         <local:BindingProxy x:Key="ProfileProxy" Data="{Binding App.Profile}" />
         <conv:WatermarkVisibilityConverter x:Key="WatermarkVisibilityConverter" />
         <conv:SegmentSelectedConverter x:Key="SegmentSelectedConverter" />
@@ -41,7 +41,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Отключаем элементы для бакалавра -->
         <Style x:Key="EnabledForMastersOnly" TargetType="{x:Type FrameworkElement}">
             <Setter Property="IsEnabled" Value="True"/>
             <Style.Triggers>
@@ -52,7 +51,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Скрыть целиком элементы для бакалавра -->
         <Style x:Key="VisibleForMastersOnly" TargetType="{x:Type FrameworkElement}">
             <Setter Property="Visibility" Value="Visible"/>
             <Style.Triggers>
@@ -63,7 +61,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Сделать поля ТОЛЬКО чтение для бакалавра -->
         <Style x:Key="ReadOnlyIfBachelor" TargetType="{x:Type TextBox}">
             <Setter Property="IsReadOnly" Value="False"/>
             <Style.Triggers>
@@ -76,7 +73,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Всегда серая 1px рамка; у выбранного — синяя внешняя 3px; размер не меняется -->
         <Style x:Key="SegmentChoiceToggle" TargetType="ToggleButton">
             <Setter Property="Padding" Value="16,12"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -99,7 +95,7 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Inner" Property="Background" Value="#EAEAEA"/>
                             </Trigger>
-                            <!-- Выбранный пункт -->
+                            
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Outer" Property="BorderBrush" Value="#2962FF"/>
                                 <Setter TargetName="Inner" Property="Background" Value="#E6F2FF"/>
@@ -110,7 +106,6 @@
             </Setter>
         </Style>
 
-        <!-- ПОТОМ стиль WatermarkTextBox -->
         <Style x:Key="WatermarkTextBox" TargetType="TextBox">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#C8C8C8"/>
@@ -138,7 +133,7 @@
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility" Value="Collapsed"/>
                                             <Style.Triggers>
-                                                <!-- Бакалавр: если текст пуст и поле не в фокусе — показать watermark -->
+                                                
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}}" Value=""/>
@@ -148,7 +143,6 @@
                                                     <Setter Property="Visibility" Value="Visible"/>
                                                 </MultiDataTrigger>
 
-                                                <!-- Разработчик: ровно те же условия, что у бакалавра -->
                                                 <MultiDataTrigger>
                                                     <MultiDataTrigger.Conditions>
                                                         <Condition Binding="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}}" Value=""/>
@@ -189,7 +183,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Шапка -->
         <DockPanel Grid.Row="0" Margin="16">
             <TextBlock DockPanel.Dock="Left"
                  Text="Анализ внешней среды  "
@@ -197,15 +190,14 @@
                  VerticalAlignment="Center"/>
         </DockPanel>
 
-        <!-- Профиль (вне вкладок) -->
         <Border Grid.Row="1" Margin="16" Padding="16" CornerRadius="12"
-        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+        Background="White" BorderBrush="{StaticResource UniBorderBrush}" BorderThickness="1">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <!-- две широкие колонки под ФИО/Группу и одна под кнопки -->
+                
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2*"/>
                     <ColumnDefinition Width="2*"/>
@@ -215,21 +207,18 @@
                 <TextBlock Grid.Row="0" Grid.ColumnSpan="3"
                Text="Профиль" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
-                <!-- ФИО -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,12,0">
                     <TextBlock Text="Фамилия и имя"/>
                     <TextBox Margin="0,4,0,0"
                Text="{Binding App.Profile.FullName, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
-                <!-- Группа -->
                 <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,12,0">
                     <TextBlock Text="Группа"/>
                     <TextBox Margin="0,4,0,0"
                Text="{Binding App.Profile.Group, UpdateSourceTrigger=PropertyChanged}"/>
                 </StackPanel>
 
-                <!-- Уровень: 3 кнопки ( IsEnabled="False" ) -->
                 <StackPanel Grid.Row="1" Grid.Column="2">
                     <TextBlock Text="Уровень"/>
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -247,9 +236,8 @@
             </Grid>
         </Border>
 
-        <!-- Табы -->
-        <TabControl x:Name="MainTabs" Grid.Row="2" Margin="16" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
-            <!-- 1. Сегмент -->
+        <TabControl x:Name="MainTabs" Grid.Row="2" Margin="16" Background="White" BorderBrush="{StaticResource UniBorderBrush}" SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+            
             <TabItem Header=" 1. Сегмент " IsEnabled="{Binding CanTab1}">
                 <ScrollViewer x:Name="SegmentSV"
                 Margin="12"
@@ -257,20 +245,17 @@
                 HorizontalScrollBarVisibility="Disabled"
                 CanContentScroll="True">
 
-                    <!-- У ScrollViewer ровно один ребёнок -->
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
 
-                        <!-- БАКАЛАВР/РАЗРАБОТЧИК: выбор из 10 сегментов -->
                         <StackPanel x:Name="BachelorView" Grid.Row="0">
                             <TextBlock Text="Выберите один из сегментов IT-индустрии" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
                             <UniformGrid Columns="2" Rows="5" Margin="0,8,0,0">
 
-                                <!-- 1 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Разработка программного обеспечения"
                         Tag="Разработка программного обеспечения"
@@ -284,7 +269,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 2 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Облачные технологии"
                         Tag="Облачные технологии"
@@ -298,7 +282,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 3 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Информационные услуги"
                         Tag="Информационные услуги"
@@ -312,7 +295,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 4 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Кибербезопасность"
                         Tag="Кибербезопасность"
@@ -326,7 +308,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 5 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Консультационные услуги"
                         Tag="Консультационные услуги"
@@ -340,7 +321,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 6 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Аналитика данных"
                         Tag="Аналитика данных"
@@ -354,7 +334,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 7 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Аппаратное обеспечение"
                         Tag="Аппаратное обеспечение"
@@ -368,7 +347,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 8 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Искусственный интеллект"
                         Tag="Искусственный интеллект"
@@ -382,7 +360,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 9 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Электронная коммерция"
                         Tag="Электронная коммерция"
@@ -396,7 +373,6 @@
                                     </ToggleButton.IsChecked>
                                 </ToggleButton>
 
-                                <!-- 10 -->
                                 <ToggleButton Style="{StaticResource SegmentChoiceToggle}"
                         Content="Телекоммуникации"
                         Tag="Телекоммуникации"
@@ -412,7 +388,6 @@
 
                             </UniformGrid>
 
-                            <!-- Видимость экрана бакалавра: по умолчанию Visible; прячем только у магистра -->
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
                                     <Setter Property="Visibility" Value="Visible"/>
@@ -426,7 +401,6 @@
                             </StackPanel.Style>
                         </StackPanel>
 
-                        <!-- МАГИСТР: свободный ввод названия сегмента -->
                         <StackPanel x:Name="MasterView" Grid.Row="1">
                             <TextBlock Text="Название сегмента" FontSize="16" FontWeight="SemiBold"/>
                             <TextBox Margin="0,8,0,0"
@@ -438,7 +412,6 @@
                                 <TextBlock Foreground="#666" Text="У магистрантов сегмент вводится вручную."/>
                             </Border>
 
-                            <!-- Видимость экрана магистра: по умолчанию Collapsed; показываем только у мастера -->
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -456,7 +429,6 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 2. PESTEL -->
             <TabItem Header=" 2. PESTEL " IsEnabled="{Binding CanTab2}">
                 <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding App.Pestel.Categories}">
@@ -474,7 +446,7 @@
                             <DataTemplate>
                                 <Border Padding="12" BorderBrush="#DDD" BorderThickness="1" CornerRadius="8" Width="580">
                                     <StackPanel>
-                                        <!-- Заголовок и счетчик -->
+                                        
                                         <DockPanel>
                                             <TextBlock DockPanel.Dock="Left"
                            Text="{Binding Title}"
@@ -486,7 +458,6 @@
                                             </Border>
                                         </DockPanel>
 
-                                        <!-- Пять строк ввода -->
                                         <TextBox Margin="0,8,0,0"
                                                  Style="{StaticResource WatermarkTextBox}"
                                                  Tag="{Binding Hints[0]}"
@@ -529,7 +500,6 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 3. Факторы/веса -->
             <TabItem Header=" 3. Факторы и веса " IsEnabled="{Binding CanTab3}">
                 <ScrollViewer x:Name="FactorsSV"
                 Margin="12"
@@ -537,16 +507,14 @@
                 HorizontalScrollBarVisibility="Disabled"
                 CanContentScroll="True">
 
-                    <!-- Весь прежний контент вкладки внутри одного контейнера -->
                     <DockPanel Margin="4">
 
-                        <!-- Панель действий -->
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
                             <TextBlock VerticalAlignment="Center"
                    Text="{Binding App.Factors.Sum, StringFormat=Сумма весов: {0:0.00}}"
                    Foreground="{Binding App.Factors.Sum, Converter={StaticResource SumOkToBrushConverter}}"
                    Margin="0,0,16,0"/>
-                            <!-- Кнопка добавления (для магистра/разработчика; у бакалавра отключена) -->
+                            
                             <Button Content=" Добавить фактор " Click="FactorAdd_Click">
                                 <Button.Style>
                                     <Style TargetType="Button">
@@ -561,7 +529,6 @@
                             </Button>
                         </StackPanel>
 
-                        <!-- Список факторов -->
                         <ItemsControl ItemsSource="{Binding App.Factors.Rows}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -572,7 +539,6 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Название фактора (у бакалавра — только чтение) -->
                                         <TextBox Grid.Column="0"
                        Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                        Margin="0,0,8,0">
@@ -588,7 +554,6 @@
                                             </TextBox.Style>
                                         </TextBox>
 
-                                        <!-- Вес (0..1). Пустое поле допускается. Нормализация при потере фокуса. -->
                                         <TextBox Grid.Column="1"
                        Text="{Binding WeightText, UpdateSourceTrigger=PropertyChanged}"
                        HorizontalContentAlignment="Right"
@@ -600,7 +565,6 @@
                                             </TextBox.ToolTip>
                                         </TextBox>
 
-                                        <!-- Удаление/очистка: бакалавр — обнулить вес, магистр/разраб — удалить строку -->
                                         <Button Grid.Column="2"
                       Content="✕"
                       Width="48"
@@ -615,52 +579,48 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 4. Оценка компаний -->
             <TabItem Header=" 4. Оценка компаний " IsEnabled="{Binding CanTab4}">
                 <ScrollViewer x:Name="RatingsSV"
                 Margin="12"
                 VerticalScrollBarVisibility="Auto"
                 HorizontalScrollBarVisibility="Disabled">
-                    <!-- общий scope для SharedSizeGroup -->
+                    
                     <Grid Grid.IsSharedSizeScope="True" Width="{Binding ElementName=RatingsSV, Path=ViewportWidth}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <!-- Заголовки -->
+                            
                             <RowDefinition Height="Auto"/>
-                            <!-- Доля рынка -->
+                            
                             <RowDefinition Height="Auto"/>
-                            <!-- Строки факторов -->
+                            
                             <RowDefinition Height="Auto"/>
-                            <!-- Взвешенный рейтинг -->
+                            
                         </Grid.RowDefinitions>
 
-                        <!-- Заголовки: задаём ширины ОДИН раз -->
                         <Border Grid.Row="0" Background="#F3F3F3" BorderThickness="1" CornerRadius="6" Padding="6" Margin="0,0,0,8">
-                            <!-- ШАПКА ТАБЛИЦЫ ОЦЕНКИ КОМПАНИЙ -->
+                            
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <!-- Вес -->
+                                    
                                     <ColumnDefinition Width="120"/>
-                                    <!-- Фактор -->
+                                    
                                     <ColumnDefinition Width="210"/>
-                                    <!-- МЫ -->
+                                    
                                     <ColumnDefinition Width="210"/>
-                                    <!-- A -->
+                                    
                                     <ColumnDefinition Width="210"/>
-                                    <!-- B -->
+                                    
                                     <ColumnDefinition Width="210"/>
-                                    <!-- C -->
+                                    
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="1" Text="Вес" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock Text="Фактор" FontWeight="Bold" Margin="0,0,12,0"/>
 
-                                <!-- «Мы» — НЕ редактируется -->
                                 <TextBlock Grid.Column="2" Text="Мы"
              FontWeight="Bold" HorizontalAlignment="Center"/>
 
-                                <!-- Остальные — редактируемые -->
                                 <TextBox Grid.Column="3" Style="{StaticResource RatingCell}"
            Text="{Binding App.Ratings.CompanyAName, UpdateSourceTrigger=PropertyChanged}"
            HorizontalContentAlignment="Center" FontWeight="Bold"/>
@@ -673,12 +633,11 @@
                             </Grid>
                         </Border>
 
-                        <!-- Доля рынка -->
                         <Border Grid.Row="1"
         BorderBrush="#E0E0E0" BorderThickness="1"
         CornerRadius="6" Padding="6" Margin="0,0,0,8">
                             <Grid>
-                                <!-- те же ширины, что и в остальных строках -->
+                                
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="120"/>
@@ -709,7 +668,6 @@
                             </Grid>
                         </Border>
 
-                        <!-- Строки факторов -->
                         <ItemsControl Grid.Row="2" ItemsSource="{Binding App.Ratings.Rows}">
                             <ItemsControl.ItemContainerStyle>
                                 <Style TargetType="ContentPresenter">
@@ -756,12 +714,11 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Взвешенный рейтинг -->
                         <Border Grid.Row="3"
         BorderBrush="#E0E0E0" BorderThickness="1"
         CornerRadius="6" Padding="6" Margin="0,8,0,0">
                             <Grid>
-                                <!-- те же ширины, что и выше -->
+                                
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="120"/>
@@ -776,12 +733,10 @@
                FontStyle="Italic" FontWeight="SemiBold"
                VerticalAlignment="Center"/>
 
-                                <!-- столбец "Вес" — тире, с тем же левым зазором -->
                                 <TextBlock Grid.Column="1" Text="—"
                HorizontalAlignment="Center" VerticalAlignment="Center"
                Margin="8,0,0,0"/>
 
-                                <!-- значения под Company/A/B/C: тот же левый зазор, выравнивание вправо -->
                                 <TextBlock Grid.Column="2"
                Text="{Binding App.Ratings.TotalMy, StringFormat={}{0:0.00}}"
                HorizontalAlignment="Center" FontWeight="SemiBold"
@@ -813,18 +768,17 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
-                                            <!-- слева: поле -->
+                                            
                                             <ColumnDefinition Width="*"/>
-                                            <!-- справа: текстовые поля -->
+                                            
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
-                                            <!-- шапка -->
+                                            
                                             <RowDefinition Height="*"/>
-                                            <!-- содержимое -->
+                                            
                                         </Grid.RowDefinitions>
 
-                                        <!-- Шапка карты -->
                                         <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
                          Margin="0,0,0,8" FontSize="22" FontWeight="SemiBold"
                          TextWrapping="Wrap">
@@ -838,7 +792,6 @@
                                             </TextBlock.Text>
                                         </TextBlock>
 
-                                        <!-- ЛЕВАЯ ЧАСТЬ: поле (квадрат 600×600), не влияет на ширину правой колонки -->
                                         <Border Grid.Row="1" Grid.Column="0"
                       Margin="8,0,16,0"
                       HorizontalAlignment="Left"
@@ -850,19 +803,16 @@
                                    Map="{Binding}"/>
                                         </Border>
 
-                                        <!-- ПРАВАЯ КОЛОНКА: нижнее поле растягивается на всё оставшееся место -->
                                         <Grid Grid.Row="1" Grid.Column="1" Margin="0,0,0,0">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>
-                                                <!-- Заголовок "Направление развития" -->
+                                                
                                                 <RowDefinition Height="*"/>
-                                                <!-- КРУПНОЕ нижнее поле: тянется -->
+                                                
                                             </Grid.RowDefinitions>
 
-                                            <!-- Направление развития -->
                                             <TextBlock Grid.Row="0" Text="Направление развития" FontWeight="Bold" Margin="0,0,0,6"/>
 
-                                            <!-- Единственное большое поле для ввода -->
                                             <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="White">
                                                 <TextBox
         Margin="6"
@@ -884,19 +834,17 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 6. Итоги -->
             <TabItem Header=" 6. Итоги " IsEnabled="{Binding CanTab6}">
                 <ScrollViewer Margin="12" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
 
-                        <!-- Сводка направлений развития по всем картам -->
                         <TextBlock Text="Направления развития (из вкладки 5)" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
                         <ItemsControl ItemsSource="{Binding App.Comparisons.Maps}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="3" Padding="10" Margin="0,0,0,10" Background="White">
                                         <StackPanel>
-                                            <!-- Заголовок элемента -->
+                                            
                                             <TextBlock FontWeight="SemiBold" Margin="0,0,0,6">
                                                 <TextBlock.Text>
                                                     <MultiBinding StringFormat="X: {0}  |  Y: {1}">
@@ -906,14 +854,13 @@
                                                 </TextBlock.Text>
                                             </TextBlock>
 
-                                            <!-- Само «Направление развития» (read-only) -->
                                             <Border BorderBrush="#EEE" BorderThickness="1" CornerRadius="3">
                                                 <TextBox Margin="6"
                                                    IsReadOnly="True"
                                                    TextWrapping="Wrap"
                                                    AcceptsReturn="True"
                                                    VerticalScrollBarVisibility="Auto">
-                                                    <!-- Берём текст из любого подходящего свойства модели карты -->
+                                                    
                                                     <TextBox.Text>
                                                         <PriorityBinding>
                                                             <Binding Path="Direction"/>
@@ -928,7 +875,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <!-- Поле 'Итоги' — пустое, пользователь заполняет здесь -->
+                        
                         <TextBlock Text="Итоги" FontWeight="Bold" FontSize="16" Margin="0,8,0,6"/>
                         <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="4" Background="White">
                             <TextBox x:Name="tbFinalSummary"
@@ -939,13 +886,12 @@
                  HorizontalScrollBarVisibility="Disabled"
                  MinHeight="220"
                  Text="{Binding App.Report.Conclusion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <!-- Если свойства App.Conclusion нет в VM, поле просто будет незабинжено, UI всё равно работает -->
+                            
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <!-- 7. Отчёт -->
             <TabItem Header=" 7. Отчёт " IsEnabled="{Binding CanTab7}">
                 <Grid Margin="16">
                     <Grid.RowDefinitions>
@@ -960,9 +906,6 @@
                         <Button Content=" Сохранить как... " Click="Report_SaveAs_Click" IsEnabled="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportHasFile}"/>
                     </StackPanel>
 
-                    <!--  <TextBlock Grid.Row="1" Text="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ReportFilePath}" Opacity="0.6" Margin="0,8,0,8"/>  -->
-
-                    <!-- Здесь можно будет вставить WebView2 для inline-превью, если захочешь -->
                 </Grid>
             </TabItem>
         </TabControl>

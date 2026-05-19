@@ -20,8 +20,6 @@ namespace ExtEnvAnalysis.Core
         [ObservableProperty] private double totalB;
         [ObservableProperty] private double totalC;
 
-        // Доля рынка (в процентах 0..100). Участвует в IsValid, чтобы карты
-        // и отчет строились только по логически корректным данным.
         [ObservableProperty] private string? marketMyText;
         [ObservableProperty] private string? marketAText;
         [ObservableProperty] private string? marketBText;
@@ -102,10 +100,8 @@ namespace ExtEnvAnalysis.Core
         {
             if (_factors == null) return;
 
-            // кэш уже введённых оценок по ссылке на фактор
             var cache = Rows.ToDictionary(r => r.Factor, r => r);
 
-            // берём ТОЛЬКО активные факторы: имя есть и вес > 0
             var active = _factors.Rows
                 .Where(f => !string.IsNullOrWhiteSpace(f.Name) && f.WeightValue > 0)
                 .ToList();
@@ -118,19 +114,15 @@ namespace ExtEnvAnalysis.Core
 
                 if (cache.TryGetValue(f, out var old))
                 {
-                    // есть старая строка — сохраняем оценки, обновим ссылку/вес
                     row = old;
                 }
                 else
                 {
-                    // новая активная строка — пустые оценки
                     row = new RatingRow(f);
                 }
 
-                // на всякий случай обновим ссылку на фактор (если конструктор не делал)
                 row.Factor = f;
 
-                // подписка на изменения оценок
                 row.PropertyChanged -= Row_PropertyChanged;
                 row.PropertyChanged += Row_PropertyChanged;
 
@@ -154,11 +146,10 @@ namespace ExtEnvAnalysis.Core
         }
         public void Recalculate()
         {
-            if (_isRecalcRunning) return;      // защита от повторного входа
+            if (_isRecalcRunning) return;
             _isRecalcRunning = true;
             try
             {
-                // Фиксируем активные строки, чтобы расчёт и проверка работали с одним набором данных.
                 var active = Rows.Where(r => r.IsActive).ToList();
                 var totals = RatingCalculationService.CalculateCompanyTotals(active);
                 TotalMy = totals.My;
@@ -170,7 +161,7 @@ namespace ExtEnvAnalysis.Core
                 bool allScoresValid = active.All(r => IsScore(r.MyText) && IsScore(r.AText)
                                                     && IsScore(r.BText) && IsScore(r.CText));
                 bool sharesValid = AreMarketSharesValid();
-                IsValid = hasActive && allScoresValid && sharesValid;  // [ObservableProperty] сам поднимет PropertyChanged
+                IsValid = hasActive && allScoresValid && sharesValid;
             }
             finally
             {
@@ -181,8 +172,6 @@ namespace ExtEnvAnalysis.Core
         private static bool IsScore(string? s) =>
             int.TryParse(s, out var v) && v >= 1 && v <= 10;
 
-
-        // --- алиасы для совместимости с AppState ---
         public void RecalculateTotals() => Recalculate();
         public void Touch() => Recalculate();
 
@@ -215,8 +204,6 @@ namespace ExtEnvAnalysis.Core
             return shares.Sum() <= 1.0 + 1e-9;
         }
 
-        // ===== ДОЛИ РЫНКА ДЛЯ ОТЧЁТА =====
-
         private static double ParsePercent01(string? t)
         {
             if (!TryPercent(t)) return 0.0;
@@ -243,7 +230,6 @@ namespace ExtEnvAnalysis.Core
             };
         }
 
-        // === Названия компаний (редактируемые пользователем) ===
         private string _companyMyName = "Мы";
         public string CompanyMyName
         {

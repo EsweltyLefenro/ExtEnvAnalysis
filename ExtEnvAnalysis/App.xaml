@@ -7,6 +7,37 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/ExtEnvAnalysis;component/Styles/DifficultyButtons.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <Color x:Key="UniPrimaryColor">#1F3B73</Color>
+            <Color x:Key="UniAccentColor">#2D6A8E</Color>
+            <Color x:Key="UniSurfaceColor">#F4F7FB</Color>
+            <Color x:Key="UniBorderColor">#C8D3E1</Color>
+            <Color x:Key="UniSuccessColor">#2E7D32</Color>
+            <Color x:Key="UniDangerColor">#C62828</Color>
+            <SolidColorBrush x:Key="UniPrimaryBrush" Color="{StaticResource UniPrimaryColor}"/>
+            <SolidColorBrush x:Key="UniAccentBrush" Color="{StaticResource UniAccentColor}"/>
+            <SolidColorBrush x:Key="UniSurfaceBrush" Color="{StaticResource UniSurfaceColor}"/>
+            <SolidColorBrush x:Key="UniBorderBrush" Color="{StaticResource UniBorderColor}"/>
+            <Style TargetType="Window">
+                <Setter Property="Background" Value="{StaticResource UniSurfaceBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource UniPrimaryBrush}"/>
+            </Style>
+            <Style TargetType="TextBox">
+                <Setter Property="BorderBrush" Value="{StaticResource UniBorderBrush}"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Padding" Value="10,8"/>
+                <Setter Property="Margin" Value="0,4,0,0"/>
+            </Style>
+            <Style TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource UniAccentBrush}"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource UniAccentBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="12,8"/>
+            </Style>
+            <Style TargetType="TabItem">
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Padding" Value="12,8"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

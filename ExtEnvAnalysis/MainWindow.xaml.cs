@@ -11,7 +11,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-
 namespace ExtEnvAnalysis;
 
 public partial class MainWindow : Window, INotifyPropertyChanged
@@ -29,10 +28,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var vm = DataContext as ExtEnvAnalysis.ViewModels.MainViewModel;
         if (vm == null) return;
 
-        // когда модель говорит «правила изменились» — обновляем UI
         VM.App.RulesChanged += () => Dispatcher.Invoke(VM.NotifyRulesChanged);
 
-        // как только меняется сумма или валидность факторов — обновляем доступ к вкладкам
         VM.App.Factors.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(ExtEnvAnalysis.Core.FactorsState.Sum) ||
@@ -49,19 +46,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.App.Ratings.AttachToFactors(VM.App.Factors);
     }
 
-    // общий обработчик для удаления/очистки для всех вариаций кнопки
     private void FactorDeleteOrClear(FactorRow row)
     {
         if (VM.App.Profile.Difficulty is Difficulty.Bachelor or Difficulty.Developer)
         {
-            // бакалавр/разработчик: фактор оставляем, вес обнуляем
-            row.WeightText = "";   // пусто => вес 0
+            row.WeightText = "";
             VM.App.FactorsChanged();
             VM.NotifyRulesChanged();
         }
         else
         {
-            // магистрант: удаляем строку факторов
             VM.App.Factors.RemoveRow(row);
             VM.App.FactorsChanged();
             VM.NotifyRulesChanged();
@@ -95,7 +89,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var current = VM.App.Profile.Difficulty;
         if (current == newLevel) return;
 
-        // Предупреждение: откат всего, кроме ФИО и группы
         var res = MessageBox.Show(
             "Сменить уровень? Все введённые данные (кроме полей «Фамилия и имя» и «Группа») будут удалены.",
             "Подтвердите смену уровня",
@@ -103,18 +96,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (res != MessageBoxResult.Yes) return;
 
-        // Сохраняем ФИ/Группу, сбрасываем всё остальное и применяем новый уровень
         var fullName = VM.App.Profile.FullName;
         var group = VM.App.Profile.Group;
 
-        VM.App.ResetAllExceptProfile();              // <-- см. п.3
+        VM.App.ResetAllExceptProfile();
         VM.App.Profile.FullName = fullName;
         VM.App.Profile.Group = group;
         VM.App.Profile.Difficulty = newLevel;
         ClearReportFile();
 
         if (newLevel == Difficulty.Developer)
-            VM.App.ApplyDeveloperPreset();   // сразу предзаполнить
+            VM.App.ApplyDeveloperPreset();
 
         VM.SelectedTabIndex = 0;
         VM.NotifyRulesChanged();
@@ -122,7 +114,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void SegmentChoice_Click(object sender, RoutedEventArgs e)
     {
-        var btn = (ButtonBase)sender; // Button или ToggleButton
+        var btn = (ButtonBase)sender;
         string name = btn.Tag?.ToString() ?? btn.Content?.ToString() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(name)) return;
         if (string.Equals(VM.App.Segment.SegmentName, name, StringComparison.Ordinal)) return;
@@ -132,7 +124,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.NotifyRulesChanged();
     }
 
-    // === STEP 4: Ввод весов (валидация ввода и нормализация) ===
     private void FactorWeight_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         if (sender is not TextBox tb) return;
@@ -142,7 +133,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         char ch = incoming[0];
 
-        // локальные помощники
         static void InsertLiteral(TextBox t, string lit)
         {
             int start = t.SelectionStart;
@@ -160,29 +150,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             (tb.Text ?? string.Empty).Contains(",") &&
             !(tb.SelectedText ?? string.Empty).Contains(",");
 
-        // Знак разделителя: '.' меняем на ','
         if (ch == '.' || ch == ',')
         {
-            // Разрешаем только одну запятую в результате
             if (alreadyHasCommaOutsideSelection)
             {
-                e.Handled = true; // вторую запятую/точку блокируем
+                e.Handled = true;
                 return;
             }
 
-            e.Handled = true;     // сами вставим нужный символ
+            e.Handled = true;
             InsertLiteral(tb, ",");
             return;
         }
 
-        // Разрешены только цифры
         if (char.IsDigit(ch))
         {
             e.Handled = false;
             return;
         }
 
-        e.Handled = true; // всё остальное запрещаем
+        e.Handled = true;
     }
 
     private void FactorWeight_LostFocus(object sender, RoutedEventArgs e)
@@ -192,12 +179,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             row.FormatWeightText();
             VM.App.Factors.Recalculate(VM.App.Profile.Difficulty);
 
-            VM.App.FactorsChanged();      // <-- пересоберёт рейтинги и карты
+            VM.App.FactorsChanged();
             VM.NotifyRulesChanged();
         }
     }
 
-    // Добавить новую строку факторов (магистр/разработчик)
     private void FactorAdd_Click(object sender, RoutedEventArgs e)
     {
         VM.App.Factors.AddRow();
@@ -207,7 +193,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.NotifyRulesChanged();
     }
 
-    // === STEP 5: Оценки 1..10 ===
     private void Score_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         e.Handled = e.Text is null || e.Text.Length == 0 || !char.IsDigit(e.Text[0]);
@@ -225,7 +210,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         VM.NotifyRulesChanged();
     }
 
-    // 0..100 (проценты)
     private void Percent_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         e.Handled = e.Text is null || e.Text.Length == 0 || !char.IsDigit(e.Text[0]);
@@ -247,10 +231,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void Direction_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
         if (DataContext is MainViewModel vm)
-            vm.NotifyRulesChanged(); // этот метод уже должен дергать OnPropertyChanged для CanTab*
+            vm.NotifyRulesChanged();
     }
 
-    // 7 вкл
     public string? ReportFilePath { get; set; }
     public bool ReportHasFile => !string.IsNullOrWhiteSpace(ReportFilePath) && File.Exists(ReportFilePath);
 

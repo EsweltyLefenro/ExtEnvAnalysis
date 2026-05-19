@@ -2,7 +2,6 @@
 
 namespace ExtEnvAnalysis
 {
-    // Позволяет безопасно пробрасывать данные (например, App.Profile) в шаблоны
     public class BindingProxy : Freezable
     {
         protected override Freezable CreateInstanceCore() => new BindingProxy();

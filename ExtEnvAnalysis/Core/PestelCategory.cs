@@ -30,7 +30,6 @@ namespace ExtEnvAnalysis.Core
             OnPropertyChanged(nameof(CompletedCount));
         }
 
-        // чтобы обновлялся CompletedCount при любом изменении поля
         partial void OnField1Changed(string? value) => OnPropertyChanged(nameof(CompletedCount));
         partial void OnField2Changed(string? value) => OnPropertyChanged(nameof(CompletedCount));
         partial void OnField3Changed(string? value) => OnPropertyChanged(nameof(CompletedCount));

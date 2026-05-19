@@ -35,16 +35,14 @@ public partial class AppState : ObservableObject
                         ApplyDeveloperPreset();
                 };
         }
-        catch { /* ok */ }
+        catch {  }
 
-        // Если хочешь активировать пресет уже при старте,
-        // когда проект загружается с выбранным Developer:
         try
         {
             if (Profile?.Difficulty == Difficulty.Developer)
                 ApplyDeveloperPreset();
         }
-        catch { /* ok */ }
+        catch {  }
 
         try
         {
@@ -56,13 +54,13 @@ public partial class AppState : ObservableObject
                         e.PropertyName == nameof(RatingsState.CompanyBName) ||
                         e.PropertyName == nameof(RatingsState.CompanyCName))
                     {
-                        try { Comparisons.Rebuild(Factors, Ratings); } catch { /* ok */ }
-                        try { RulesChanged?.Invoke(); } catch { /* ok */ }
+                        try { Comparisons.Rebuild(Factors, Ratings); } catch {  }
+                        try { RulesChanged?.Invoke(); } catch {  }
                     }
                 };
             }
         }
-        catch { /* ok */ }
+        catch {  }
     }
 
     private void Reset(params ISection[] sections)
@@ -80,7 +78,6 @@ public partial class AppState : ObservableObject
 
     public void ResetAllExceptProfile()
     {
-        // Сбрасываем все секции; профиль не трогаем (его нет в списке all)
         ResetAllExcept();
         Ratings.Reset();
         Ratings.AttachToFactors(Factors);
@@ -91,8 +88,6 @@ public partial class AppState : ObservableObject
         if (Profile.Difficulty == Difficulty.Bachelor)
             Factors.ApplyPresetForBachelor(Segment.SegmentName);
 
-        // если у тебя логика «при смене уровня всё сбрасывать» — оставь её тоже
-        // ResetAllExceptProfile(); …
     }
 
     public event Action? RulesChanged;
@@ -101,16 +96,16 @@ public partial class AppState : ObservableObject
 
     public void RatingsChanged()
     {
-        Ratings.Recalculate();                 // ← у тебя такой метод есть в RatingsState
-        Comparisons.Rebuild(Factors, Ratings); // ← после перерасчёта оценок пересобираем карты
-        RulesChanged?.Invoke();                // ← вместо несуществующего OnRulesChanged()
+        Ratings.Recalculate();
+        Comparisons.Rebuild(Factors, Ratings);
+        RulesChanged?.Invoke();
     }
 
     public void FactorsChanged()
     {
         Factors.Recalculate(Profile.Difficulty);
         Ratings.SyncWithFactors(Factors);
-        Ratings.Recalculate();                 // безопасно «освежить» итоги
+        Ratings.Recalculate();
         Comparisons.Rebuild(Factors, Ratings);
         RulesChanged?.Invoke();
     }

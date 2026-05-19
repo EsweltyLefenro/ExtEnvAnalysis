@@ -16,7 +16,6 @@ namespace ExtEnvAnalysis.Controls
             SizeChanged += (_, __) => Redraw();
         }
 
-        // === DependencyProperty для модели карты ===
         public static readonly DependencyProperty MapProperty =
             DependencyProperty.Register(
                 nameof(Map),
@@ -36,7 +35,6 @@ namespace ExtEnvAnalysis.Controls
                 self.Redraw();
         }
 
-        // --- утилита: попытаться достать название оси из Map по распространённым именам свойств
         private string GetAxisTitle(bool isX)
         {
             if (Map == null) return isX ? "X" : "Y";
@@ -56,34 +54,30 @@ namespace ExtEnvAnalysis.Controls
             return isX ? "X" : "Y";
         }
 
-        // === Основной метод отрисовки ===
         private void Redraw()
         {
             if (Plot == null || Map == null) return;
 
             Plot.Children.Clear();
 
-            // Размеры Canvas — как есть (квадратность задаётся в XAML)
             double W = Math.Max(ActualWidth, 200);
             double H = Math.Max(ActualHeight, 200);
             Plot.Width = W;
             Plot.Height = H;
 
-            // ФИКСИРОВАННЫЕ ПОЛЯ (НЕ МЕНЯЕМ)
             const double left = 90;
             const double right = 24;
             const double top = 28;
             const double bottom = 90;
 
-            double gw = W - left - right; // ширина сетки
-            double gh = H - top - bottom; // высота сетки
+            double gw = W - left - right;
+            double gh = H - top - bottom;
             if (gw <= 0 || gh <= 0) return;
 
-            const int N = 10; // 10×10
+            const int N = 10;
             double cellW = gw / N;
             double cellH = gh / N;
 
-            // ===== Сетка 10×10 =====
             var gridBrush = new SolidColorBrush(Color.FromRgb(220, 220, 220));
             for (int i = 0; i <= N; i++)
             {
@@ -110,7 +104,6 @@ namespace ExtEnvAnalysis.Controls
                 });
             }
 
-            // Рамка вокруг поля
             Plot.Children.Add(new System.Windows.Shapes.Rectangle
             {
                 Width = gw,
@@ -121,7 +114,6 @@ namespace ExtEnvAnalysis.Controls
             Canvas.SetLeft(Plot.Children[^1], left);
             Canvas.SetTop(Plot.Children[^1], top);
 
-            // ===== Числа по осям (1..10), центрированные по клеткам =====
             void DrawCenteredText(string text, double cx, double cy, double fontSize = 18, bool bold = false)
             {
                 var tb = new TextBlock
@@ -136,7 +128,6 @@ namespace ExtEnvAnalysis.Controls
                 Plot.Children.Add(tb);
             }
 
-            // Ось X: числа внизу
             for (int i = 1; i <= N; i++)
             {
                 double cx = left + (i - 0.5) * cellW;
@@ -155,7 +146,6 @@ namespace ExtEnvAnalysis.Controls
                 });
             }
 
-            // Ось Y: числа слева
             for (int j = 1; j <= N; j++)
             {
                 double cy = top + gh - (j - 0.5) * cellH;
@@ -174,11 +164,9 @@ namespace ExtEnvAnalysis.Controls
                 });
             }
 
-            // ==== Подписи осей ====
             string xTitle = GetAxisTitle(isX: true);
             string yTitle = GetAxisTitle(isX: false);
 
-            // X — по центру снизу
             {
                 var tb = new TextBlock { Text = xTitle, FontSize = 16, FontWeight = FontWeights.SemiBold };
                 tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -189,7 +177,6 @@ namespace ExtEnvAnalysis.Controls
                 Plot.Children.Add(tb);
             }
 
-            // Y — вертикально, по центру слева
             {
                 var tb = new TextBlock { Text = yTitle, FontSize = 16, FontWeight = FontWeights.SemiBold, LayoutTransform = new RotateTransform(-90) };
                 tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -200,24 +187,21 @@ namespace ExtEnvAnalysis.Controls
                 Plot.Children.Add(tb);
             }
 
-            // ===== Перевод координат 1..10 в пиксели =====
             double ToPxX(double x) => left + (Math.Clamp(x, 1.0, 10.0) - 0.5) * cellW;
             double ToPxY(double y) => top + gh - (Math.Clamp(y, 1.0, 10.0) - 0.5) * cellH;
 
-            // ==== Масштаб кружков от самой большой доли рынка ====
             double maxMarket = Math.Max(Math.Max(Map.Me.Market, Map.A.Market), Math.Max(Map.B.Market, Map.C.Market));
-            if (maxMarket <= 0) maxMarket = 1; // защита от деления на ноль
+            if (maxMarket <= 0) maxMarket = 1;
             double cellSize = Math.Min(cellW, cellH);
-            double Rmax = 0.48 * cellSize; // крупнейший ~ почти вся клетка
-            double Rmin = 0.14 * cellSize; // у маленьких, чтобы не исчезли
+            double Rmax = 0.48 * cellSize;
+            double Rmin = 0.14 * cellSize;
 
-            // ===== Рисование точки компании =====
             void DrawPoint(CompanyPoint p, string label, Brush brush)
             {
                 double px = ToPxX(p.X);
                 double py = ToPxY(p.Y);
 
-                double rRatio = p.Market / maxMarket;   // 0..1
+                double rRatio = p.Market / maxMarket;
                 double R = Math.Max(Rmin, Rmax * rRatio);
 
                 var ellipse = new System.Windows.Shapes.Ellipse
@@ -241,16 +225,15 @@ namespace ExtEnvAnalysis.Controls
                 {
                     Text = label,
                     FontWeight = FontWeights.SemiBold,
-                    FontSize = 12,  // чуть меньше
+                    FontSize = 12,
                     Foreground = brush
                 };
                 tblock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                Canvas.SetLeft(tblock, px + R + 4); // ближе к окружности
+                Canvas.SetLeft(tblock, px + R + 4);
                 Canvas.SetTop(tblock, py - tblock.DesiredSize.Height / 2.0);
                 Plot.Children.Add(tblock);
             }
 
-            // выбираем подпись: сначала CompanyPoint.Label, потом Map.Names[i], потом дефолт
             string LabelOrDefault(CompanyPoint p, int i)
             {
                 if (!string.IsNullOrWhiteSpace(p.Label)) return p.Label!;
@@ -259,7 +242,6 @@ namespace ExtEnvAnalysis.Controls
                 return i switch { 0 => "Мы", 1 => "A", 2 => "B", 3 => "C", _ => "?" };
             }
 
-            // Точки компаний: берём кисть из модели, если задана (иначе дефолт)
             DrawPoint(Map.Me, LabelOrDefault(Map.Me, 0), Map.Me.Brush ?? Brushes.RoyalBlue);
             DrawPoint(Map.A, LabelOrDefault(Map.A, 1), Map.A.Brush ?? Brushes.Goldenrod);
             DrawPoint(Map.B, LabelOrDefault(Map.B, 2), Map.B.Brush ?? Brushes.MediumSeaGreen);
